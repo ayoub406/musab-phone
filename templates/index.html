@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مصعب فون | احجز آيفون 18 الآن</title>
+  <meta name="description" content="مصعب فون - احجز جهاز آيفون 18 الجديد قبل الجميع، عرض محدود لمدة قصيرة." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}" type="image/png">
+</head>
+<body>
+{% import "_logo.html" as L %}
+{% import "_social.html" as S %}
+
+  <!-- ===== الهيدر ===== -->
+  <header class="navbar">
+    <div class="container">
+      {{ L.logo("nav") }}
+
+      <nav class="nav-links" id="nav-links">
+        <a href="#home">الرئيسية</a>
+        <a href="#features">المميزات</a>
+        <a href="#gallery">الألوان</a>
+        <a href="#models">الموديلات</a>
+        <a href="#growth">الحجوزات</a>
+        <a href="#reserve">الحجز</a>
+      </nav>
+      <div class="nav-actions">
+        {{ S.social_icons(social_links, "nav") }}
+        <a href="tel:{{ maintenance_phone }}" class="btn-support" title="قسم الصيانة">🛠️ {{ maintenance_phone }}</a>
+        <a href="#reserve" class="btn-nav">احجز الآن</a>
+        <button class="nav-toggle" id="nav-toggle" aria-label="فتح القائمة" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== الهيرو ===== -->
+  <section class="hero" id="home">
+    <div class="container">
+      <span class="badge">🚀 حجوزات مسبقة محدودة</span>
+      <h1>احجز جهازك <span>iPhone 18</span><br> قبل أي أحد آخر</h1>
+      <p class="subtitle">
+        مصعب فون يقدّم لك فرصة الحجز المسبق لأحدث إصدار من آيفون بأفضل الأسعار
+        وأولوية استلام فور توفر الجهاز.
+      </p>
+      <div class="hero-cta">
+        <a href="#reserve" class="btn btn-primary">احجز جهازك الآن</a>
+        <a href="#models" class="btn btn-outline">تصفح الموديلات</a>
+      </div>
+
+      <div class="hero-image-wrap">
+        <div class="phone-mock">
+          <div class="screen-glow"></div>
+          <div class="logo-on-screen">iPhone 18</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== العداد التنازلي ===== -->
+  <section class="countdown-section">
+    <div class="container">
+      <h2>⏳ ينتهي وقت الحجز خلال</h2>
+      <p class="deadline-text">الموعد النهائي: {{ deadline_readable }}</p>
+
+      <div id="countdown-wrap" class="countdown" data-deadline="{{ deadline_iso }}">
+        <div class="box"><span class="num" id="cd-days">00</span><span class="label">يوم</span></div>
+        <div class="box"><span class="num" id="cd-hours">00</span><span class="label">ساعة</span></div>
+        <div class="box"><span class="num" id="cd-minutes">00</span><span class="label">دقيقة</span></div>
+        <div class="box"><span class="num" id="cd-seconds">00</span><span class="label">ثانية</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== عداد الكمية المتاحة (100 جهاز) ===== -->
+  <section class="stock-section">
+    <div class="container">
+      <div class="stock-box" id="stock-box" data-endpoint="{{ url_for('api_stock') }}">
+        <div class="stock-top">
+          <span class="stock-label">🔥 الكمية المتاحة للحجز</span>
+          <span class="stock-numbers">
+            متبقي <strong id="stock-remaining">{{ stock.remaining }}</strong> من {{ stock.total }} جهاز
+          </span>
+        </div>
+        <div class="stock-bar-track">
+          <div class="stock-bar-fill" id="stock-bar-fill" style="width: {{ stock.percent }}%;"></div>
+        </div>
+        <div class="stock-bottom">
+          <span id="stock-percent">{{ stock.percent }}%</span> من الكمية تم حجزها
+        </div>
+        <div id="stock-soldout" class="stock-soldout" {% if not stock.sold_out %}style="display:none;"{% endif %}>
+          نفدت الكمية بالكامل! الحجز مغلق الآن.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== الرسم البياني الحي لنمو الحجوزات ===== -->
+  <section class="growth-section" id="growth">
+    <div class="container">
+      <div class="section-title">
+        <h2>نمو الحجوزات لحظة بلحظة</h2>
+        <p>الخط يرتفع مباشرة مع كل عملية حجز جديدة</p>
+      </div>
+      <div class="growth-box" data-endpoint="{{ url_for('api_timeline') }}">
+        <div class="growth-top">
+          <span class="growth-label">📈 إجمالي الحجوزات حتى الآن</span>
+          <span class="growth-total" id="growth-total">{{ stock.reserved }}</span>
+        </div>
+        <div class="growth-chart-wrap">
+          <canvas id="growth-chart" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== المميزات ===== -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-title">
+        <h2>لماذا تحجز عبر مصعب فون؟</h2>
+        <p>نوفر لك تجربة حجز موثوقة وسريعة وآمنة</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="icon">⚡</div>
+          <h3>أولوية الاستلام</h3>
+          <p>كن من أوائل من يستلم جهاز آيفون 18 فور وصوله للمتجر.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🔒</div>
+          <h3>حجز آمن 100%</h3>
+          <p>بياناتك محمية بالكامل، ولا يتم أي خصم مالي عند الحجز.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">💬</div>
+          <h3>دعم فوري</h3>
+          <p>فريق مصعب فون جاهز للرد على استفساراتك في أي وقت.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🏷️</div>
+          <h3>أفضل الأسعار</h3>
+          <p>أسعار تنافسية وعروض حصرية للحاجزين الأوائل فقط.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== معرض الألوان (5 صور) ===== -->
+  <section class="gallery-section" id="gallery">
+    <div class="container">
+      <div class="section-title">
+        <h2>اختر لونك المفضل</h2>
+        <p>iPhone 18 متوفر بخمسة ألوان مميزة</p>
+      </div>
+      <div class="gallery-grid">
+        {% for g in gallery %}
+        <div class="gallery-card">
+          <div class="gallery-img-wrap">
+            <img src="{{ url_for('static', filename='img/' ~ g.file) }}"
+                 alt="iPhone 18 - {{ g.color }}" loading="lazy"
+                 onerror="this.closest('.gallery-img-wrap').classList.add('img-missing');">
+          </div>
+          <div class="gallery-caption">{{ g.color }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== الموديلات ===== -->
+  <section class="models-section" id="models">
+    <div class="container">
+      <div class="section-title">
+        <h2>اختر موديلك المفضل</h2>
+        <p>جميع نسخ آيفون 18 متاحة للحجز المسبق - الأسعار ستُعلن قريباً بالدينار الليبي</p>
+      </div>
+      <div class="models-grid">
+        {% for m in models %}
+        <div class="model-card {% if loop.index == 2 %}popular{% endif %}">
+          <h3>{{ m.name }}</h3>
+          {% if show_prices %}
+          <div class="price">{{ "{:,}".format(m.price) }} {{ currency }}</div>
+          {% else %}
+          <div class="price price-tbd">السعر يُعلن قريباً 🔔</div>
+          {% endif %}
+          <a href="#reserve" class="btn btn-outline">احجز هذا الموديل</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== نموذج الحجز ===== -->
+  <section class="reserve-section" id="reserve">
+    <div class="container">
+      <div class="section-title">
+        <h2>نموذج الحجز</h2>
+        <p>عبّئ بياناتك وسيتواصل معك فريقنا لتأكيد الحجز</p>
+      </div>
+
+      <div class="reserve-box">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('reserve') }}" method="POST">
+          <div class="form-grid">
+            <div class="field">
+              <label>الاسم الكامل *</label>
+              <input type="text" name="full_name" placeholder="مثال: مصعب أحمد" required>
+            </div>
+            <div class="field">
+              <label>رقم الجوال *</label>
+              <input type="tel" name="phone" placeholder="05xxxxxxxx" required>
+            </div>
+            <div class="field">
+              <label>البريد الإلكتروني</label>
+              <input type="email" name="email" placeholder="example@email.com">
+            </div>
+            <div class="field">
+              <label>المدينة</label>
+              <input type="text" name="city" placeholder="مدينتك">
+            </div>
+            <div class="field">
+              <label>الموديل *</label>
+              <select name="model" required>
+                <option value="" disabled selected>اختر الموديل</option>
+                {% for m in models %}
+                <option value="{{ m.id }}">{{ m.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label>اللون *</label>
+              <select name="color" required>
+                <option value="" disabled selected>اختر اللون</option>
+                {% for c in colors %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field full">
+              <label>سعة التخزين *</label>
+              <select name="storage" required>
+                <option value="" disabled selected>اختر السعة</option>
+                {% for s in storages %}
+                <option value="{{ s }}">{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field full">
+              <label>ملاحظات إضافية</label>
+              <textarea name="notes" rows="3" placeholder="أي تفاصيل إضافية ترغب بإخبارنا بها"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">تأكيد الحجز</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== الفوتر ===== -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div style="margin-bottom: 14px;">
+            {{ L.logo("footer", invert=true) }}
+          </div>
+          <p style="max-width: 260px; color:#a9c2e0; font-size:0.9rem; margin-bottom: 16px;">
+            وجهتك الأولى لحجز أحدث أجهزة آيفون بثقة وسهولة.
+          </p>
+          {{ S.social_icons(social_links, "footer") }}
+        </div>
+        <div>
+          <h4>روابط سريعة</h4>
+          <ul>
+            <li><a href="#home">الرئيسية</a></li>
+            <li><a href="#features">المميزات</a></li>
+            <li><a href="#models">الموديلات</a></li>
+            <li><a href="#reserve">الحجز</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>تواصل معنا</h4>
+          <ul>
+            <li>🛠️ قسم الصيانة: {{ maintenance_phone }}</li>
+            <li>💬 <a href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noopener">تواصل واتساب</a></li>
+            <li>✉️ info@musabphone.com</li>
+            <li>📍 ليبيا</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        © 2026 مصعب فون. جميع الحقوق محفوظة.
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/countdown.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/stock.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='js/chart-growth.js') }}"></script>
+</body>
+</html>

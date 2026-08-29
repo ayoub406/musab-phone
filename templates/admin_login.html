@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دخول لوحة التحكم | مصعب فون</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .login-wrap {
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-box {
+      background: #fff;
+      border: 1px solid var(--gray-100);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+    .login-box h2 { color: var(--brand-navy); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+{% import "_logo.html" as L %}
+  <div class="login-wrap">
+    <div class="login-box">
+      <div style="display:flex; justify-content:center; margin-bottom: 20px;">
+        {{ L.logo("login") }}
+      </div>
+      <h2>لوحة تحكم الحجوزات</h2>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('admin') }}" style="margin-top:20px;">
+        <div class="field" style="margin-bottom:16px; text-align:right;">
+          <label>كلمة المرور</label>
+          <input type="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">دخول</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

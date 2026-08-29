@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة تحكم الحجوزات | مصعب فون</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .admin-wrap { padding: 40px 0; }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    th, td {
+      padding: 14px 16px;
+      text-align: right;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    th {
+      background: var(--brand-navy);
+      color: #fff;
+      font-weight: 700;
+    }
+    tr:hover { background: var(--brand-blue-light); }
+    .del-btn {
+      background: #ffecec;
+      color: #c0392b;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    .stat-badge {
+      background: var(--brand-blue-light);
+      color: var(--brand-blue);
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .table-scroll { overflow-x: auto; }
+  </style>
+</head>
+<body>
+{% import "_logo.html" as L %}
+  <header class="navbar">
+    <div class="container">
+      <div style="display:flex; align-items:center; gap:12px;">
+        {{ L.logo("admin") }}
+        <span style="color:var(--gray-500); font-weight:700; font-size:0.95rem;">لوحة التحكم</span>
+      </div>
+      <a href="{{ url_for('admin_logout') }}" class="btn-nav">تسجيل الخروج</a>
+    </div>
+  </header>
+
+  <div class="container admin-wrap">
+    <div class="admin-header">
+      <h2 style="color: var(--brand-navy);">قائمة الحجوزات</h2>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <span class="stat-badge">إجمالي الحجوزات: {{ reservations|length }}</span>
+        <span class="stat-badge">المتبقي من 100: {{ stock.remaining }}</span>
+        <span class="stat-badge">نسبة الحجز: {{ stock.percent }}%</span>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>رقم الحجز</th>
+            <th>الاسم</th>
+            <th>الجوال</th>
+            <th>البريد</th>
+            <th>المدينة</th>
+            <th>الموديل</th>
+            <th>اللون</th>
+            <th>السعة</th>
+            <th>تاريخ الحجز</th>
+            <th>حذف</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reservations %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.booking_ref or "-" }}</td>
+            <td>{{ r.full_name }}</td>
+            <td>{{ r.phone }}</td>
+            <td>{{ r.email or "-" }}</td>
+            <td>{{ r.city or "-" }}</td>
+            <td>{{ model_names.get(r.model, r.model) }}</td>
+            <td>{{ r.color }}</td>
+            <td>{{ r.storage }}</td>
+            <td>{{ r.created_at[:16].replace("T", " ") }}</td>
+            <td>
+              <form action="{{ url_for('admin_delete', res_id=r.id) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
+                <button type="submit" class="del-btn">حذف</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="11" style="text-align:center; padding: 30px;">لا توجد حجوزات حتى الآن.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
