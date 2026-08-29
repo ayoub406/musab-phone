@@ -3,58 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>لوحة تحكم الحجوزات | مصعب فون</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <title>لوحة تحكم مصعب فون</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
+    body { background: var(--gray-50); }
     .admin-wrap { padding: 40px 0; }
     .admin-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-      gap: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
+    .admin-tabs { display: flex; gap: 8px; margin-bottom: 26px; flex-wrap: wrap; }
+    .admin-tabs a {
+      padding: 10px 20px; border-radius: 999px; font-weight: 700; font-size: 0.9rem;
+      background: #fff; color: var(--gray-700); border: 1.5px solid var(--gray-100);
     }
-    th, td {
-      padding: 14px 16px;
-      text-align: right;
-      font-size: 0.9rem;
-      border-bottom: 1px solid var(--gray-100);
-    }
-    th {
-      background: var(--brand-navy);
-      color: #fff;
-      font-weight: 700;
-    }
+    .admin-tabs a.active { background: var(--brand-navy); color: #fff; border-color: var(--brand-navy); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+    th, td { padding: 14px 16px; text-align: right; font-size: 0.9rem; border-bottom: 1px solid var(--gray-100); }
+    th { background: var(--brand-navy); color: #fff; font-weight: 700; }
     tr:hover { background: var(--brand-blue-light); }
     .del-btn {
-      background: #ffecec;
-      color: #c0392b;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 0.8rem;
+      background: #ffecec; color: #c0392b; border: none; padding: 6px 14px;
+      border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem;
+    }
+    .toggle-btn {
+      background: var(--gray-100); color: var(--gray-700); border: none; padding: 6px 14px;
+      border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem;
     }
     .stat-badge {
-      background: var(--brand-blue-light);
-      color: var(--brand-blue);
-      padding: 8px 18px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 0.9rem;
+      background: var(--brand-blue-light); color: var(--brand-blue); padding: 8px 18px;
+      border-radius: 999px; font-weight: 700; font-size: 0.9rem;
     }
     .table-scroll { overflow-x: auto; }
+    .catalog-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; align-items: start; }
+    @media (max-width: 900px) { .catalog-grid { grid-template-columns: 1fr; } }
+    .panel { background: #fff; border-radius: 14px; box-shadow: var(--shadow); padding: 22px; }
+    .panel h3 { color: var(--brand-navy); margin-bottom: 16px; }
+    .panel form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+    .panel input, .panel select, .panel textarea {
+      padding: 11px 14px; border-radius: 10px; border: 1.5px solid var(--gray-300);
+      font-family: inherit; font-size: 0.92rem; width: 100%;
+    }
+    .cat-list, .prod-list { display: flex; flex-direction: column; gap: 8px; }
+    .cat-row, .prod-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--gray-50); padding: 10px 14px; border-radius: 10px; font-size: 0.88rem;
+    }
+    .prod-row img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
+    .prod-row .prod-main { display: flex; align-items: center; gap: 10px; flex: 1; }
   </style>
 </head>
 <body>
@@ -63,18 +61,32 @@
     <div class="container">
       <div style="display:flex; align-items:center; gap:12px;">
         {{ L.logo("admin") }}
-        <span style="color:var(--gray-500); font-weight:700; font-size:0.95rem;">لوحة التحكم</span>
+        <span style="color:var(--gray-500); font-weight:700; font-size:0.95rem;">لوحة التحكم (خاصة)</span>
       </div>
       <a href="{{ url_for('admin_logout') }}" class="btn-nav">تسجيل الخروج</a>
     </div>
   </header>
 
   <div class="container admin-wrap">
+    <div class="admin-tabs">
+      <a href="{{ url_for('admin') }}" class="{{ 'active' if active_tab == 'reservations' else '' }}">📋 الحجوزات</a>
+      <a href="{{ url_for('admin_catalog') }}" class="{{ 'active' if active_tab == 'catalog' else '' }}">📦 الهواتف والإكسسوارات</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if active_tab == 'reservations' %}
     <div class="admin-header">
       <h2 style="color: var(--brand-navy);">قائمة الحجوزات</h2>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <span class="stat-badge">إجمالي الحجوزات: {{ reservations|length }}</span>
-        <span class="stat-badge">المتبقي من 100: {{ stock.remaining }}</span>
+        <span class="stat-badge">المتبقي من {{ stock.total }}: {{ stock.remaining }}</span>
         <span class="stat-badge">نسبة الحجز: {{ stock.percent }}%</span>
       </div>
     </div>
@@ -83,17 +95,9 @@
       <table>
         <thead>
           <tr>
-            <th>#</th>
-            <th>رقم الحجز</th>
-            <th>الاسم</th>
-            <th>الجوال</th>
-            <th>البريد</th>
-            <th>المدينة</th>
-            <th>الموديل</th>
-            <th>اللون</th>
-            <th>السعة</th>
-            <th>تاريخ الحجز</th>
-            <th>حذف</th>
+            <th>#</th><th>رقم الحجز</th><th>الاسم</th><th>الجوال</th><th>البريد</th>
+            <th>المدينة</th><th>الموديل</th><th>اللون</th><th>السعة</th>
+            <th>طلب VIP</th><th>تاريخ الحجز</th><th>حذف</th>
           </tr>
         </thead>
         <tbody>
@@ -108,6 +112,7 @@
             <td>{{ model_names.get(r.model, r.model) }}</td>
             <td>{{ r.color }}</td>
             <td>{{ r.storage }}</td>
+            <td>{{ r.custom_request or "-" }}</td>
             <td>{{ r.created_at[:16].replace("T", " ") }}</td>
             <td>
               <form action="{{ url_for('admin_delete', res_id=r.id) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
@@ -116,11 +121,81 @@
             </td>
           </tr>
           {% else %}
-          <tr><td colspan="11" style="text-align:center; padding: 30px;">لا توجد حجوزات حتى الآن.</td></tr>
+          <tr><td colspan="12" style="text-align:center; padding: 30px;">لا توجد حجوزات حتى الآن.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    {% endif %}
+
+    {% if active_tab == 'catalog' %}
+    <div class="catalog-grid">
+      <div class="panel">
+        <h3>الأقسام</h3>
+        <form action="{{ url_for('admin_add_category') }}" method="POST">
+          <input type="text" name="name_ar" placeholder="اسم القسم بالعربي (مثال: أكفار آيفون)" required>
+          <input type="text" name="name_en" placeholder="Category name in English (optional)">
+          <button type="submit" class="btn btn-primary">إضافة قسم</button>
+        </form>
+        <div class="cat-list">
+          {% for c in categories %}
+          <div class="cat-row">
+            <span>{{ c.name_ar }} {% if c.name_en %}<span style="color:var(--gray-500);">({{ c.name_en }})</span>{% endif %}</span>
+            <form action="{{ url_for('admin_delete_category', cat_id=c.id) }}" method="POST" onsubmit="return confirm('حذف هذا القسم؟');">
+              <button type="submit" class="del-btn">حذف</button>
+            </form>
+          </div>
+          {% else %}
+          <p style="color:var(--gray-500); font-size:0.85rem;">لا توجد أقسام بعد.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>إضافة هاتف / إكسسوار جديد</h3>
+        <form action="{{ url_for('admin_add_product') }}" method="POST" enctype="multipart/form-data">
+          <input type="text" name="name" placeholder="اسم المنتج (مثال: iPhone 15 Pro مستعمل، أو كفر سيليكون)" required>
+          <select name="category_id">
+            <option value="">بدون قسم</option>
+            {% for c in categories %}
+            <option value="{{ c.id }}">{{ c.name_ar }}</option>
+            {% endfor %}
+          </select>
+          <input type="number" step="0.01" name="price" placeholder="السعر بالدينار الليبي (اختياري)">
+          <textarea name="description" rows="2" placeholder="وصف مختصر للمنتج"></textarea>
+          <input type="file" name="image" accept="image/*">
+          <button type="submit" class="btn btn-primary">إضافة المنتج</button>
+        </form>
+
+        <h3 style="margin-top:10px;">المنتجات الحالية</h3>
+        <div class="prod-list">
+          {% for p in products %}
+          <div class="prod-row">
+            <div class="prod-main">
+              {% if p.image %}
+              <img src="{{ url_for('static', filename='img/products/' ~ p.image) }}" alt="">
+              {% endif %}
+              <div>
+                <strong>{{ p.name }}</strong>
+                <div style="color:var(--gray-500);">{{ p.cat_ar or "بدون قسم" }} {% if p.price %}- {{ "{:,.0f}".format(p.price) }} د.ل{% endif %} {% if not p.active %}- <span style="color:#c0392b;">غير مفعّل</span>{% endif %}</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <form action="{{ url_for('admin_toggle_product', prod_id=p.id) }}" method="POST">
+                <button type="submit" class="toggle-btn">{{ "إخفاء" if p.active else "إظهار" }}</button>
+              </form>
+              <form action="{{ url_for('admin_delete_product', prod_id=p.id) }}" method="POST" onsubmit="return confirm('حذف هذا المنتج؟');">
+                <button type="submit" class="del-btn">حذف</button>
+              </form>
+            </div>
+          </div>
+          {% else %}
+          <p style="color:var(--gray-500); font-size:0.85rem;">لا توجد منتجات بعد.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </body>
 </html>

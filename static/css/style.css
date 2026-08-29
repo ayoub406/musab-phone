@@ -6,6 +6,7 @@
   --brand-blue-light: #e8f3ff;
   --brand-navy: #0a2540;
   --white: #ffffff;
+  --surface: #ffffff;
   --gray-50: #f7f9fb;
   --gray-100: #eef2f6;
   --gray-300: #cdd7e1;
@@ -14,6 +15,37 @@
   --shadow: 0 10px 30px rgba(0, 113, 227, 0.12);
   --radius: 18px;
 }
+
+/* ===== الوضع الليلي ===== */
+[data-theme="dark"] {
+  --white: #0d1a2b;
+  --surface: #142943;
+  --gray-50: #0f2038;
+  --gray-100: #1c3452;
+  --gray-300: #2f4a6b;
+  --gray-500: #9db3ca;
+  --gray-700: #e8f0fb;
+  --brand-navy: #eaf2ff;
+  --brand-blue-light: rgba(0, 113, 227, 0.16);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] body { background: #0a1524; }
+[data-theme="dark"] .navbar { background: rgba(10, 21, 36, 0.85); }
+[data-theme="dark"] .model-card,
+[data-theme="dark"] .gallery-card,
+[data-theme="dark"] .reserve-box,
+[data-theme="dark"] .growth-box,
+[data-theme="dark"] .stock-box,
+[data-theme="dark"] .feature-card { background: var(--surface); border-color: var(--gray-100); }
+[data-theme="dark"] .field input,
+[data-theme="dark"] .field select,
+[data-theme="dark"] .field textarea,
+[data-theme="dark"] .lookup-form input { background: var(--gray-50); color: var(--gray-700); border-color: var(--gray-300); }
+[data-theme="dark"] .price-tbd { background: var(--gray-50); }
+[data-theme="dark"] .nav-links { background: var(--surface); }
+[data-theme="dark"] .theme-icon-moon { display: inline; }
+[data-theme="dark"] .theme-icon-sun { display: none; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -25,6 +57,7 @@ body {
   color: var(--gray-700);
   line-height: 1.7;
   overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 a { text-decoration: none; color: inherit; }
@@ -103,6 +136,25 @@ img { max-width: 100%; display: block; }
   white-space: nowrap;
 }
 .btn-support:hover { border-color: var(--brand-blue); color: var(--brand-blue); }
+
+.btn-lang, .btn-theme {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1.5px solid var(--gray-300);
+  background: transparent;
+  color: var(--brand-navy);
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: 0.2s;
+  flex-shrink: 0;
+}
+.btn-lang:hover, .btn-theme:hover { border-color: var(--brand-blue); color: var(--brand-blue); }
+.theme-icon-moon { display: none; }
 
 .nav-links {
   display: flex;
@@ -188,7 +240,7 @@ img { max-width: 100%; display: block; }
 .btn-primary:hover { background: var(--brand-blue-dark); transform: translateY(-2px); }
 
 .btn-outline {
-  background: #fff;
+  background: var(--surface);
   color: var(--brand-blue);
   border: 2px solid var(--brand-blue);
 }
@@ -400,18 +452,21 @@ img { max-width: 100%; display: block; }
 .gallery-card:hover { transform: translateY(-6px); border-color: var(--brand-blue); }
 
 .gallery-img-wrap {
-  aspect-ratio: 1 / 1;
+  /* نسبة تقارب شكل جهاز الآيفون الفعلي بدل المربع، حتى لا تظهر الصورة مقصوصة أو مشوّهة */
+  aspect-ratio: 9 / 16;
+  max-height: 380px;
   background: var(--brand-blue-light);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  padding: 14px;
 }
 
 .gallery-img-wrap img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .gallery-img-wrap.img-missing {
@@ -534,6 +589,35 @@ img { max-width: 100%; display: block; }
 
 .model-card h3 { color: var(--brand-navy); font-size: 1.3rem; margin-bottom: 10px; font-weight: 800; }
 .model-card .price { font-size: 1.6rem; color: var(--brand-blue); font-weight: 900; margin-bottom: 20px; }
+.model-card button.btn { width: 100%; border: none; cursor: pointer; font-family: inherit; }
+
+/* ===== بطاقة طلب VIP الخاص (طلاء ذهبي وتصاميم مخصصة) ===== */
+.model-card.vip-card {
+  position: relative;
+  background: linear-gradient(160deg, #fff8e6, #fff);
+  border: 2px solid #d4af37;
+  overflow: visible;
+}
+.vip-crown {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.6rem;
+}
+.model-card.vip-card h3 { color: #8a6d1f; }
+.model-card.vip-card .price {
+  font-size: 0.88rem !important;
+  color: #8a6d1f !important;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px dashed #d4af37;
+}
+.model-card.vip-card .js-pick-model {
+  background: linear-gradient(135deg, #d4af37, #a97e1f);
+  color: #fff;
+  border-color: transparent;
+}
+[data-theme="dark"] .model-card.vip-card { background: linear-gradient(160deg, #241d0c, var(--surface)); }
 
 /* ===== نموذج الحجز ===== */
 .reserve-section {

@@ -16,7 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function buildChart(labels, values) {
     const ctx = canvas.getContext("2d");
     const gradient = ctx.createLinearGradient(0, 0, 0, 260);
-    gradient.addColorStop(0, brandBlueLight);
+    gradient.addColorStop(0, "rgba(0, 113, 227, 0.35)");
+    gradient.addColorStop(0.6, brandBlueLight);
     gradient.addColorStop(1, "rgba(255,255,255,0)");
 
     chart = new Chart(ctx, {
@@ -30,22 +31,46 @@ document.addEventListener("DOMContentLoaded", function () {
             borderColor: brandBlue,
             backgroundColor: gradient,
             fill: true,
-            tension: 0.35,
-            borderWidth: 3,
-            pointRadius: values.length > 40 ? 0 : 3,
-            pointBackgroundColor: brandBlue,
-            pointHoverRadius: 5,
+            tension: 0.42,
+            cubicInterpolationMode: "monotone",
+            borderWidth: 3.5,
+            shadowOffsetX: 0,
+            shadowOffsetY: 4,
+            shadowBlur: 10,
+            shadowColor: "rgba(0, 113, 227, 0.35)",
+            pointRadius: values.length > 40 ? 0 : 4,
+            pointBackgroundColor: "#fff",
+            pointBorderColor: brandBlue,
+            pointBorderWidth: 2,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: brandBlue,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 500 },
-        plugins: { legend: { display: false } },
+        animation: { duration: 700, easing: "easeOutQuart" },
+        interaction: { mode: "nearest", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "#0a2540",
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: false,
+          },
+        },
         scales: {
-          y: { beginAtZero: true, ticks: { precision: 0 } },
-          x: { display: labels.length <= 25 },
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 },
+            grid: { color: "rgba(10, 37, 64, 0.06)" },
+          },
+          x: {
+            display: labels.length <= 25,
+            grid: { display: false },
+          },
         },
       },
     });

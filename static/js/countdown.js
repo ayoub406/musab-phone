@@ -7,7 +7,8 @@ function startCountdown(deadlineIso, elements) {
     const diff = deadline - now;
 
     if (diff <= 0) {
-      elements.wrap.innerHTML = '<p class="countdown-expired">⏰ انتهى وقت استقبال الحجوزات</p>';
+      const msg = elements.wrap.dataset.expiredText || "⏰ انتهى وقت استقبال الحجوزات";
+      elements.wrap.innerHTML = '<p class="countdown-expired">' + msg + '</p>';
       clearInterval(timer);
       return;
     }
