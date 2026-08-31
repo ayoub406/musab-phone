@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", function () {
     percentEl.textContent = data.percent + "%";
     fillEl.style.width = data.percent + "%";
 
+    const growthRemainingEl = document.getElementById("growth-remaining");
+    if (growthRemainingEl) growthRemainingEl.textContent = data.remaining;
+
     if (data.sold_out) {
       soldoutEl.style.display = "block";
       if (reserveBtn) {

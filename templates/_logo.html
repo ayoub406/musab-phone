@@ -8,7 +8,7 @@
    show_word: إظهار اسم "مصعب.فون" بجانب الأيقونة
    invert: نص أبيض (يُستخدم فوق خلفية داكنة كالفوتر)
    ============================================================ #}
-{% macro logo(uid, size=42, show_word=true, invert=false) %}
+{% macro logo(uid, size=42, show_word=true, invert=false, tagline=None) %}
 <a href="{{ url_for('index') }}" class="brand-logo" aria-label="مصعب فون - الصفحة الرئيسية">
   <span class="brand-mark" style="width:{{ size }}px;height:{{ size }}px;">
     <img src="{{ url_for('static', filename='img/logo.png') }}" alt="مصعب فون" class="brand-mark-img"
@@ -29,7 +29,12 @@
     </svg>
   </span>
   {% if show_word %}
-  <span class="brand-word{{ ' brand-word--light' if invert else '' }}">مصعب<span class="brand-dot">.</span>فون</span>
+  <span class="brand-text">
+    <span class="brand-word{{ ' brand-word--light' if invert else '' }}">مصعب<span class="brand-dot">.</span>فون</span>
+    {% if tagline %}
+    <span class="brand-tagline{{ ' brand-tagline--light' if invert else '' }}">{{ tagline }}</span>
+    {% endif %}
+  </span>
   {% endif %}
 </a>
 {% endmacro %}

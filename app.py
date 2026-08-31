@@ -52,7 +52,8 @@ PUBLIC_ONLY = os.environ.get("PUBLIC_ONLY") == "1"
 # ===== إعدادات التواصل =====
 # ---------------------------------------------------------
 COMPANY_NAME = "مصعب فون"
-MAINTENANCE_PHONE = "0922051000"
+SALES_PHONE = "0922051000"        # رقم قسم المبيعات (نفس الرقم القديم)
+MAINTENANCE_PHONE = "0942051000"  # رقم قسم الصيانة (نفس الرقم بس بادئة 094)
 WHATSAPP_BUSINESS_NUMBER = "218922051000"
 
 # روابط السوشيال ميديا - تيك توك مضبوط على الحساب الرسمي musab_phone
@@ -211,12 +212,36 @@ MODELS = [
 ]
 
 GALLERY = [
-    {"color": "أزرق تيتانيوم", "file": "phone-1.jpg"},
-    {"color": "أبيض سماوي", "file": "phone-2.jpg"},
-    {"color": "أسود فضائي", "file": "phone-3.jpg"},
-    {"color": "ذهبي طبيعي", "file": "phone-4.jpg"},
-    {"color": "بنفسجي داكن", "file": "phone-5.jpg"},
+    {"color": "أزرق تيتانيوم", "file": "phone-1.jpg", "hex": "#4a6fa5"},
+    {"color": "أبيض سماوي", "file": "phone-2.jpg", "hex": "#d7dee6"},
+    {"color": "أسود فضائي", "file": "phone-3.jpg", "hex": "#1c1c1e"},
+    {"color": "ذهبي طبيعي", "file": "phone-4.jpg", "hex": "#d4af6a"},
+    {"color": "بنفسجي داكن", "file": "phone-5.jpg", "hex": "#5b3a76"},
 ]
+
+
+def get_color_sales_counts():
+    """يرجع عدد الحجوزات لكل لون حتى الآن (لعرض 'الأكثر مبيعاً')."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT color, COUNT(*) AS c FROM reservations GROUP BY color"
+    ).fetchall()
+    conn.close()
+    return {row["color"]: row["c"] for row in rows}
+
+
+def get_gallery_with_sales():
+    """يبني قائمة الألوان مع عدد الحجوزات لكل لون، ويحدد اللون الأكثر مبيعاً."""
+    counts = get_color_sales_counts()
+    gallery = []
+    for g in GALLERY:
+        item = dict(g)
+        item["count"] = counts.get(g["color"], 0)
+        gallery.append(item)
+    max_count = max((g["count"] for g in gallery), default=0)
+    for g in gallery:
+        g["is_bestseller"] = max_count > 0 and g["count"] == max_count
+    return gallery
 
 
 def valid_phone(phone: str) -> bool:
@@ -234,13 +259,13 @@ TRANSLATIONS = {
     "ar": {
         "dir": "rtl", "html_lang": "ar",
         "nav_home": "الرئيسية", "nav_features": "المميزات", "nav_gallery": "الألوان",
-        "nav_models": "الموديلات", "nav_growth": "الحجوزات", "nav_reserve": "الحجز",
+        "nav_models": "المنتجات", "nav_growth": "الحجوزات", "nav_reserve": "الحجز",
         "nav_lookup": "استرجاع حجزي",
         "book_now": "احجز الآن",
         "hero_badge": "🚀 حجوزات مسبقة محدودة",
         "hero_title_pre": "احجز جهازك", "hero_title_high": "iPhone 18", "hero_title_post": "قبل أي أحد آخر",
         "hero_sub": "مصعب فون يقدّم لك فرصة الحجز المسبق لأحدث إصدار من آيفون بأفضل الأسعار وأولوية استلام فور توفر الجهاز.",
-        "hero_cta1": "احجز جهازك الآن", "hero_cta2": "تصفح الموديلات",
+        "hero_cta1": "احجز جهازك الآن", "hero_cta2": "تصفح منتجات آبل الجديدة",
         "countdown_title": "⏳ ينتهي وقت الحجز خلال",
         "deadline_prefix": "الموعد النهائي:",
         "cd_day": "يوم", "cd_hour": "ساعة", "cd_min": "دقيقة", "cd_sec": "ثانية",
@@ -257,6 +282,8 @@ TRANSLATIONS = {
         "f3_title": "دعم فوري", "f3_desc": "فريق مصعب فون جاهز للرد على استفساراتك في أي وقت.",
         "f4_title": "أفضل الأسعار", "f4_desc": "أسعار تنافسية وعروض حصرية للحاجزين الأوائل فقط.",
         "gallery_title": "اختر لونك المفضل", "gallery_sub": "iPhone 18 متوفر بخمسة ألوان مميزة",
+        "gallery_sold_label": "حجز حتى الآن", "gallery_bestseller": "🏆 الأكثر مبيعاً",
+        "brand_tagline": "رقم واحد في السوق الليبي لمنتجات Apple واكسسواراتها",
         "models_title": "اختر موديلك المفضل",
         "models_sub": "جميع الموديلات متاحة للحجز المسبق - لكل موديل ألوان وسعات خاصة به",
         "price_tbd": "السعر يُعلن قريباً 🔔", "popular_badge": "الأكثر طلباً",
@@ -277,6 +304,7 @@ TRANSLATIONS = {
         "footer_tagline": "وجهتك الأولى لحجز أحدث أجهزة آيفون بثقة وسهولة.",
         "footer_quicklinks": "روابط سريعة", "footer_contact": "تواصل معنا",
         "footer_maintenance": "قسم الصيانة", "footer_whatsapp": "تواصل واتساب",
+        "footer_sales": "قسم المبيعات",
         "footer_rights": "© 2026 مصعب فون. جميع الحقوق محفوظة.",
         "theme_toggle": "الوضع الليلي",
         "lookup_title": "استرجاع الباركود عن طريق رقم الهاتف",
@@ -290,13 +318,13 @@ TRANSLATIONS = {
     "en": {
         "dir": "ltr", "html_lang": "en",
         "nav_home": "Home", "nav_features": "Features", "nav_gallery": "Colors",
-        "nav_models": "Models", "nav_growth": "Bookings", "nav_reserve": "Reserve",
+        "nav_models": "Products", "nav_growth": "Bookings", "nav_reserve": "Reserve",
         "nav_lookup": "Find my booking",
         "book_now": "Book Now",
         "hero_badge": "🚀 Limited Pre-Orders",
         "hero_title_pre": "Reserve your", "hero_title_high": "iPhone 18", "hero_title_post": "before anyone else",
         "hero_sub": "Musab Phone gives you the chance to pre-order the newest iPhone at the best prices, with priority pickup as soon as it's available.",
-        "hero_cta1": "Reserve now", "hero_cta2": "Browse models",
+        "hero_cta1": "Reserve now", "hero_cta2": "Browse Apple's new products",
         "countdown_title": "⏳ Booking closes in",
         "deadline_prefix": "Deadline:",
         "cd_day": "Days", "cd_hour": "Hours", "cd_min": "Min", "cd_sec": "Sec",
@@ -313,6 +341,8 @@ TRANSLATIONS = {
         "f3_title": "Instant support", "f3_desc": "The Musab Phone team is ready to answer your questions anytime.",
         "f4_title": "Best prices", "f4_desc": "Competitive prices and exclusive offers for early bookers.",
         "gallery_title": "Pick your favorite color", "gallery_sub": "iPhone 18 comes in five stunning colors",
+        "gallery_sold_label": "booked so far", "gallery_bestseller": "🏆 Best seller",
+        "brand_tagline": "Libya's #1 destination for Apple products & accessories",
         "models_title": "Choose your model",
         "models_sub": "All models are open for pre-order - each model has its own colors and storage options",
         "price_tbd": "Price to be announced 🔔", "popular_badge": "Most popular",
@@ -333,6 +363,7 @@ TRANSLATIONS = {
         "footer_tagline": "Your first destination to book the newest iPhones with trust and ease.",
         "footer_quicklinks": "Quick links", "footer_contact": "Contact us",
         "footer_maintenance": "Support line", "footer_whatsapp": "Chat on WhatsApp",
+        "footer_sales": "Sales line",
         "footer_rights": "© 2026 Musab Phone. All rights reserved.",
         "theme_toggle": "Dark mode",
         "lookup_title": "Retrieve your barcode by phone number",
@@ -438,11 +469,12 @@ if not ADMIN_ONLY:
         return render_template(
             "index.html",
             models=MODELS,
-            gallery=GALLERY,
+            gallery=get_gallery_with_sales(),
             deadline_iso=RESERVATION_DEADLINE.isoformat(),
             deadline_readable=RESERVATION_DEADLINE.strftime("%Y-%m-%d %I:%M %p"),
             stock=get_stock_status(),
             maintenance_phone=MAINTENANCE_PHONE,
+            sales_phone=SALES_PHONE,
             whatsapp_number=WHATSAPP_BUSINESS_NUMBER,
             company_name=COMPANY_NAME,
             social_links=SOCIAL_LINKS,
@@ -550,7 +582,8 @@ if not ADMIN_ONLY:
                 f"رقم الحجز: {booking['booking_ref']}\n"
                 f"الاسم: {booking['full_name']}\n"
                 f"الموديل: {booking['model_name']} - {booking['color']} - {booking['storage']}\n"
-                f"للاستفسار أو الصيانة: {MAINTENANCE_PHONE}"
+                f"للاستفسار أو المبيعات: {SALES_PHONE}\n"
+                f"للصيانة: {MAINTENANCE_PHONE}"
             )
             from urllib.parse import quote
 
@@ -561,6 +594,7 @@ if not ADMIN_ONLY:
             deadline_iso=RESERVATION_DEADLINE.isoformat(),
             booking=booking,
             maintenance_phone=MAINTENANCE_PHONE,
+            sales_phone=SALES_PHONE,
             whatsapp_link=whatsapp_link,
             company_name=COMPANY_NAME,
             social_links=SOCIAL_LINKS,
@@ -619,13 +653,15 @@ if not ADMIN_ONLY:
 
         labels = []
         cumulative = []
+        timestamps = []
         count = 0
         for row in rows:
             count += 1
             cumulative.append(count)
             labels.append(f"#{count}")
+            timestamps.append(row["created_at"])
 
-        return jsonify({"labels": labels, "values": cumulative, "total": count})
+        return jsonify({"labels": labels, "values": cumulative, "timestamps": timestamps, "total": count})
 
 
 # ===========================================================

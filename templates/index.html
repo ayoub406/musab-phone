@@ -24,20 +24,20 @@
   <!-- ===== الهيدر ===== -->
   <header class="navbar">
     <div class="container">
-      {{ L.logo("nav") }}
+      {{ L.logo("nav", tagline=t.brand_tagline) }}
 
       <nav class="nav-links" id="nav-links">
         <a href="#home">{{ t.nav_home }}</a>
-        <a href="#features">{{ t.nav_features }}</a>
         <a href="#gallery">{{ t.nav_gallery }}</a>
-        <a href="#models">{{ t.nav_models }}</a>
+        <a href="#products">{{ t.nav_models }}</a>
         <a href="#growth">{{ t.nav_growth }}</a>
         <a href="{{ url_for('lookup') }}">{{ t.nav_lookup }}</a>
         <a href="#reserve">{{ t.nav_reserve }}</a>
       </nav>
       <div class="nav-actions">
         {{ S.social_icons(social_links, "nav") }}
-        <a href="tel:{{ maintenance_phone }}" class="btn-support" title="{{ t.footer_maintenance }}">🛠️ {{ maintenance_phone }}</a>
+        <a href="tel:{{ sales_phone }}" class="btn-support" title="{{ t.footer_sales }}">💼 {{ sales_phone }}</a>
+        <a href="tel:{{ maintenance_phone }}" class="btn-support btn-support--maint" title="{{ t.footer_maintenance }}">🛠️ {{ maintenance_phone }}</a>
         <a href="{{ url_for('set_lang', code='en' if lang == 'ar' else 'ar') }}" class="btn-lang" title="Language / اللغة">
           {{ "EN" if lang == "ar" else "AR" }}
         </a>
@@ -60,15 +60,37 @@
       <p class="subtitle">{{ t.hero_sub }}</p>
       <div class="hero-cta">
         <a href="#reserve" class="btn btn-primary">{{ t.hero_cta1 }}</a>
-        <a href="#models" class="btn btn-outline">{{ t.hero_cta2 }}</a>
+        <a href="#products" class="btn btn-outline">{{ t.hero_cta2 }}</a>
       </div>
 
-      <div class="hero-image-wrap">
-        <div class="phone-mock">
-          <div class="screen-glow"></div>
-          <div class="logo-on-screen">iPhone 18</div>
+      <!-- ===== صندوق VIP الذهبي (تصميم زجاجي أقوى، بنفس الحجم) ===== -->
+      {% for m in models %}
+        {% if m.is_vip %}
+        <div class="vip-standalone">
+          <div class="vip-crown">👑</div>
+          <div class="model-card vip-card vip-card--glass">
+            <span class="vip-card-shine"></span>
+            <h3><span class="vip-shine-text">VIP</span> <span class="vip-sub-text">- طلب خاص</span></h3>
+            <div class="price price-tbd">{{ t.vip_desc }}</div>
+            <button type="button" class="btn btn-outline js-pick-model" data-model="{{ m.id }}">
+              {{ t.vip_cta }}
+            </button>
+          </div>
         </div>
-      </div>
+        {% endif %}
+      {% endfor %}
+
+      <!-- ===== بانر ترويجي ===== -->
+      <a href="#reserve" class="promo-banner">
+        <span class="promo-banner-glow"></span>
+        <span class="promo-phone-wrap">
+          <img src="{{ url_for('static', filename='img/phone-1.jpg') }}" alt="iPhone 18 Pro Max" class="promo-phone-img" loading="lazy">
+          <span class="promo-phone-shine"></span>
+        </span>
+        <h3>{{ "كن أول الحاصلين على آيفون 18 برو ماكس" if lang == "ar" else "Be the first to get the iPhone 18 Pro Max" }}</h3>
+        <p>{{ "احجز الآن وكن من أوائل المستلمين فور توفر الجهاز" if lang == "ar" else "Reserve now and be among the first to receive it" }}</p>
+        <span class="promo-banner-cta">{{ t.hero_cta1 }} ←</span>
+      </a>
     </div>
   </section>
 
@@ -113,50 +135,25 @@
 
   <!-- ===== الرسم البياني الحي لنمو الحجوزات ===== -->
   <section class="growth-section" id="growth">
+    <span class="growth-decor growth-decor-1"></span>
+    <span class="growth-decor growth-decor-2"></span>
     <div class="container">
       <div class="section-title">
         <h2>{{ t.growth_title }}</h2>
         <p>{{ t.growth_sub }}</p>
       </div>
-      <div class="growth-box" data-endpoint="{{ url_for('api_timeline') }}">
+      <div class="growth-box" data-endpoint="{{ url_for('api_stock') }}">
+        <div class="growth-toast" id="growth-toast">🎉 {{ "حجز جديد الآن!" if lang == "ar" else "New booking just now!" }}</div>
         <div class="growth-top">
-          <span class="growth-label">{{ t.growth_label }}</span>
+          <span class="growth-label"><span class="live-dot"></span>{{ t.growth_label }}</span>
           <span class="growth-total" id="growth-total">{{ stock.reserved }}</span>
         </div>
-        <div class="growth-chart-wrap">
-          <canvas id="growth-chart" height="260"></canvas>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ===== المميزات ===== -->
-  <section class="features" id="features">
-    <div class="container">
-      <div class="section-title">
-        <h2>{{ t.features_title }}</h2>
-        <p>{{ t.features_sub }}</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="icon">⚡</div>
-          <h3>{{ t.f1_title }}</h3>
-          <p>{{ t.f1_desc }}</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon">🔒</div>
-          <h3>{{ t.f2_title }}</h3>
-          <p>{{ t.f2_desc }}</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon">💬</div>
-          <h3>{{ t.f3_title }}</h3>
-          <p>{{ t.f3_desc }}</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon">🏷️</div>
-          <h3>{{ t.f4_title }}</h3>
-          <p>{{ t.f4_desc }}</p>
+        <div class="growth-stats-row growth-stats-row--simple">
+          <div class="growth-stat-chip">
+            <span class="chip-value" id="growth-remaining">{{ stock.remaining }}</span>
+            <span class="chip-label">{{ t.stock_label }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -171,54 +168,33 @@
       </div>
       <div class="gallery-grid">
         {% for g in gallery %}
-        <div class="gallery-card">
+        <div class="gallery-card{{ ' gallery-card--best' if g.is_bestseller else '' }}" style="--swatch: {{ g.hex }};">
+          {% if g.is_bestseller %}
+          <span class="gallery-badge-best">{{ t.gallery_bestseller }}</span>
+          {% endif %}
           <div class="gallery-img-wrap">
             <img src="{{ url_for('static', filename='img/' ~ g.file) }}"
                  alt="iPhone 18 - {{ g.color }}" loading="lazy"
                  onerror="this.closest('.gallery-img-wrap').classList.add('img-missing');">
           </div>
           <div class="gallery-caption">{{ g.color }}</div>
+          <div class="gallery-sold">🔥 <strong>{{ g.count }}</strong> {{ t.gallery_sold_label }}</div>
         </div>
         {% endfor %}
       </div>
     </div>
   </section>
 
-  <!-- ===== الموديلات ===== -->
-  <section class="models-section" id="models">
-    <div class="container">
-      <div class="section-title">
-        <h2>{{ t.models_title }}</h2>
-        <p>{{ t.models_sub }}</p>
-      </div>
-      <div class="models-grid">
-        {% for m in models %}
-        <div class="model-card {% if m.is_vip %}vip-card{% elif loop.index == 2 %}popular{% endif %}">
-          {% if m.is_vip %}<div class="vip-crown">👑</div>{% endif %}
-          <h3>{{ m.name }}</h3>
-          {% if m.is_vip %}
-          <div class="price price-tbd">{{ t.vip_desc }}</div>
-          {% elif show_prices %}
-          <div class="price">{{ "{:,}".format(m.price) }} {{ currency }}</div>
-          {% else %}
-          <div class="price price-tbd">{{ t.price_tbd }}</div>
-          {% endif %}
-          <button type="button" class="btn btn-outline js-pick-model" data-model="{{ m.id }}">
-            {{ t.vip_cta if m.is_vip else t.book_this_model }}
-          </button>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  {% if products %}
-  <!-- ===== منتجات وإكسسوارات إضافية (من لوحة التحكم) ===== -->
+  <!-- ===== منتجات آبل (تُدار بالكامل من لوحة التحكم) ===== -->
   <section class="products-section" id="products">
     <div class="container">
       <div class="section-title">
-        <h2>{{ "منتجات وإكسسوارات" if lang == "ar" else "Products & Accessories" }}</h2>
+        <h2>{{ "تصفح منتجات آبل الجديدة 2026" if lang == "ar" else "Browse Apple's New Products 2026" }}</h2>
+        {% if not products %}
+        <p>{{ "سيتم إضافة المنتجات قريباً من قبل فريقنا" if lang == "ar" else "Products will be added soon by our team" }}</p>
+        {% endif %}
       </div>
+      {% if products %}
       <div class="gallery-grid">
         {% for p in products %}
         <div class="gallery-card">
@@ -233,9 +209,9 @@
         </div>
         {% endfor %}
       </div>
+      {% endif %}
     </div>
   </section>
-  {% endif %}
 
   <!-- ===== نموذج الحجز ===== -->
   <section class="reserve-section" id="reserve">
@@ -286,9 +262,15 @@
             </div>
             <div class="field">
               <label>{{ t.label_color }}</label>
-              <select name="color" id="color-select" required disabled>
-                <option value="" disabled selected>{{ t.ph_choose_color }}</option>
-              </select>
+              <button type="button" id="color-trigger" class="color-trigger" disabled>
+                <span class="color-trigger-placeholder" id="color-trigger-placeholder">{{ t.ph_choose_color }}</span>
+                <span class="color-trigger-chosen" id="color-trigger-chosen" style="display:none;">
+                  <img id="color-trigger-img" src="" alt="">
+                  <span id="color-trigger-name"></span>
+                </span>
+                <span class="color-trigger-arrow">›</span>
+              </button>
+              <input type="hidden" name="color" id="color-value" required>
             </div>
             <div class="field full">
               <label>{{ t.label_storage }}</label>
@@ -308,6 +290,17 @@
 
           <button type="submit" class="btn btn-primary">{{ t.btn_confirm }}</button>
         </form>
+      </div>
+
+      <!-- ===== نافذة اختيار اللون بالصور (بدل القائمة المنسدلة) ===== -->
+      <div class="color-modal-overlay" id="color-modal-overlay">
+        <div class="color-modal">
+          <div class="color-modal-header">
+            <h3>{{ t.gallery_title }}</h3>
+            <button type="button" class="color-modal-close" id="color-modal-close" aria-label="close">×</button>
+          </div>
+          <div class="color-modal-grid" id="color-modal-grid"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -329,8 +322,7 @@
           <h4>{{ t.footer_quicklinks }}</h4>
           <ul>
             <li><a href="#home">{{ t.nav_home }}</a></li>
-            <li><a href="#features">{{ t.nav_features }}</a></li>
-            <li><a href="#models">{{ t.nav_models }}</a></li>
+            <li><a href="#products">{{ t.nav_models }}</a></li>
             <li><a href="{{ url_for('lookup') }}">{{ t.nav_lookup }}</a></li>
             <li><a href="#reserve">{{ t.nav_reserve }}</a></li>
           </ul>
@@ -338,10 +330,11 @@
         <div>
           <h4>{{ t.footer_contact }}</h4>
           <ul>
+            <li>💼 {{ t.footer_sales }}: {{ sales_phone }}</li>
             <li>🛠️ {{ t.footer_maintenance }}: {{ maintenance_phone }}</li>
             <li>💬 <a href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noopener">{{ t.footer_whatsapp }}</a></li>
             <li>✉️ info@musabphone.com</li>
-            <li>📍 {{ "ليبيا" if lang == "ar" else "Libya" }}</li>
+            <li>📍 {{ "بنغازي الفويهات شارع الببسي شارع جنة الفواكة" if lang == "ar" else "Libya" }}</li>
           </ul>
         </div>
       </div>
@@ -354,14 +347,15 @@
   <script>
     // بيانات الموديلات (كل موديل له ألوان وسعات خاصة به) لبناء القوائم المنسدلة ديناميكياً
     window.MUSAB_MODELS = {{ models|tojson }};
+    window.MUSAB_GALLERY = {{ gallery|tojson }};
     window.MUSAB_T = {{ t|tojson }};
+    window.MUSAB_LANG = {{ lang|tojson }};
   </script>
   <script src="{{ url_for('static', filename='js/countdown.js') }}"></script>
   <script src="{{ url_for('static', filename='js/stock.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <script src="{{ url_for('static', filename='js/model-select.js') }}"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
   <script src="{{ url_for('static', filename='js/chart-growth.js') }}"></script>
 </body>
 </html>
