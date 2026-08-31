@@ -104,6 +104,9 @@ def init_db():
     )
     if not _column_exists(conn, "reservations", "custom_request"):
         conn.execute("ALTER TABLE reservations ADD COLUMN custom_request TEXT")
+    if not _column_exists(conn, "reservations", "status"):
+        conn.execute("ALTER TABLE reservations ADD COLUMN status TEXT DEFAULT 'pending'")
+        conn.execute("UPDATE reservations SET status = 'pending' WHERE status IS NULL")
 
     conn.execute(
         """
@@ -210,6 +213,24 @@ MODELS = [
         "is_vip": True,
     },
 ]
+
+# ---------------------------------------------------------
+# حالات الطلب (تُستخدم في لوحة التحكم لمتابعة كل حجز)
+# ---------------------------------------------------------
+ORDER_STATUSES = [
+    {"id": "pending",    "label_ar": "قيد الانتظار",  "label_en": "Pending",    "color": "#f39c12", "icon": "⏳"},
+    {"id": "processing", "label_ar": "قيد التجهيز",   "label_en": "Processing", "color": "#2f80ed", "icon": "⚙️"},
+    {"id": "shipped",    "label_ar": "تم الشحن",      "label_en": "Shipped",    "color": "#8e44ad", "icon": "🚚"},
+    {"id": "delivered",  "label_ar": "تم التسليم",    "label_en": "Delivered",  "color": "#27ae60", "icon": "✅"},
+    {"id": "cancelled",  "label_ar": "ملغي",          "label_en": "Cancelled",  "color": "#c0392b", "icon": "✖️"},
+]
+ORDER_STATUS_MAP = {s["id"]: s for s in ORDER_STATUSES}
+VALID_STATUS_IDS = {s["id"] for s in ORDER_STATUSES}
+
+
+def status_info(status_id):
+    return ORDER_STATUS_MAP.get(status_id, ORDER_STATUS_MAP["pending"])
+
 
 GALLERY = [
     {"color": "أزرق تيتانيوم", "file": "phone-1.jpg", "hex": "#4a6fa5"},
@@ -689,6 +710,10 @@ if not PUBLIC_ONLY:
 
         conn = get_db()
         rows = conn.execute("SELECT * FROM reservations ORDER BY id DESC").fetchall()
+        status_counts = {s["id"]: 0 for s in ORDER_STATUSES}
+        for row in rows:
+            st = row["status"] if row["status"] in VALID_STATUS_IDS else "pending"
+            status_counts[st] = status_counts.get(st, 0) + 1
         conn.close()
 
         model_names = {m["id"]: m["name"] for m in MODELS}
@@ -698,6 +723,8 @@ if not PUBLIC_ONLY:
             model_names=model_names,
             stock=get_stock_status(),
             active_tab="reservations",
+            order_statuses=ORDER_STATUSES,
+            status_counts=status_counts,
         )
 
     @app.route("/admin/logout")
@@ -713,6 +740,31 @@ if not PUBLIC_ONLY:
         conn.execute("DELETE FROM reservations WHERE id = ?", (res_id,))
         conn.commit()
         conn.close()
+        return redirect(url_for("admin"))
+
+    @app.route("/admin/status/<int:res_id>", methods=["POST"])
+    def admin_update_status(res_id):
+        if not admin_required():
+            if request.is_json or request.headers.get("X-Requested-With") == "fetch":
+                return jsonify({"ok": False, "error": "unauthorized"}), 401
+            return redirect(url_for("admin"))
+
+        new_status = (request.form.get("status") or (request.get_json(silent=True) or {}).get("status") or "").strip()
+        if new_status not in VALID_STATUS_IDS:
+            if request.is_json or request.headers.get("X-Requested-With") == "fetch":
+                return jsonify({"ok": False, "error": "invalid_status"}), 400
+            flash("حالة غير صالحة.", "error")
+            return redirect(url_for("admin"))
+
+        conn = get_db()
+        conn.execute("UPDATE reservations SET status = ? WHERE id = ?", (new_status, res_id))
+        conn.commit()
+        conn.close()
+
+        if request.headers.get("X-Requested-With") == "fetch":
+            info = status_info(new_status)
+            return jsonify({"ok": True, "status": new_status, "label_ar": info["label_ar"], "color": info["color"], "icon": info["icon"]})
+
         return redirect(url_for("admin"))
 
     # -------------------------------------------------------

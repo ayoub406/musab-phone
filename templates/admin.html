@@ -37,6 +37,44 @@
       border-radius: 999px; font-weight: 700; font-size: 0.9rem;
     }
     .table-scroll { overflow-x: auto; }
+
+    /* ===== حالة الطلب ===== */
+    .status-filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 16px; border-radius: 999px; font-weight: 700; font-size: 0.85rem;
+      background: #fff; border: 1.5px solid var(--gray-100); color: var(--gray-700);
+      cursor: pointer; user-select: none; transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .status-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+    .status-chip .chip-count {
+      background: var(--gray-100); color: var(--gray-700); border-radius: 999px;
+      padding: 1px 8px; font-size: 0.78rem;
+    }
+    .status-chip.active { color: #fff; border-color: transparent; }
+    .status-chip.active .chip-count { background: rgba(255,255,255,.28); color: #fff; }
+
+    .status-select-wrap { position: relative; display: inline-block; }
+    .status-select {
+      appearance: none; -webkit-appearance: none; border: none; cursor: pointer;
+      padding: 7px 30px 7px 12px; border-radius: 999px; font-weight: 700; font-size: 0.8rem;
+      color: #fff; background-color: #f39c12; background-image: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0));
+      transition: background-color .15s ease, box-shadow .15s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .status-select:focus { outline: none; box-shadow: 0 0 0 3px rgba(47,128,237,.25); }
+    .status-select-wrap::after {
+      content: "▾"; position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      color: #fff; font-size: 0.7rem; pointer-events: none; opacity: .85;
+    }
+    tr[data-status] { transition: opacity .15s ease; }
+    .status-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--brand-navy); color: #fff; padding: 12px 22px; border-radius: 12px;
+      font-weight: 700; font-size: 0.9rem; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+      opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .25s ease; z-index: 999;
+    }
+    .status-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .catalog-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; align-items: start; }
     @media (max-width: 900px) { .catalog-grid { grid-template-columns: 1fr; } }
     .panel { background: #fff; border-radius: 14px; box-shadow: var(--shadow); padding: 22px; }
@@ -91,18 +129,31 @@
       </div>
     </div>
 
+    <!-- ===== فلاتر حالة الطلب ===== -->
+    <div class="status-filters" id="statusFilters">
+      <span class="status-chip active" data-filter="all" style="background: var(--brand-navy);">
+        الكل <span class="chip-count">{{ reservations|length }}</span>
+      </span>
+      {% for s in order_statuses %}
+      <span class="status-chip" data-filter="{{ s.id }}" style="--chip-color: {{ s.color }};">
+        {{ s.icon }} {{ s.label_ar }} <span class="chip-count">{{ status_counts.get(s.id, 0) }}</span>
+      </span>
+      {% endfor %}
+    </div>
+
     <div class="table-scroll">
       <table>
         <thead>
           <tr>
             <th>#</th><th>رقم الحجز</th><th>الاسم</th><th>الجوال</th><th>البريد</th>
             <th>المدينة</th><th>الموديل</th><th>اللون</th><th>السعة</th>
-            <th>طلب VIP</th><th>تاريخ الحجز</th><th>حذف</th>
+            <th>طلب VIP</th><th>تاريخ الحجز</th><th>حالة الطلب</th><th>حذف</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="reservationsBody">
           {% for r in reservations %}
-          <tr>
+          {% set cur_status = r.status if r.status in (order_statuses|map(attribute='id')|list) else 'pending' %}
+          <tr data-status="{{ cur_status }}">
             <td>{{ r.id }}</td>
             <td>{{ r.booking_ref or "-" }}</td>
             <td>{{ r.full_name }}</td>
@@ -115,17 +166,133 @@
             <td>{{ r.custom_request or "-" }}</td>
             <td>{{ r.created_at[:16].replace("T", " ") }}</td>
             <td>
+              <span class="status-select-wrap">
+                <select class="status-select js-status-select" data-res-id="{{ r.id }}">
+                  {% for s in order_statuses %}
+                  <option value="{{ s.id }}" data-color="{{ s.color }}" {{ "selected" if s.id == cur_status else "" }}>
+                    {{ s.icon }} {{ s.label_ar }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </span>
+            </td>
+            <td>
               <form action="{{ url_for('admin_delete', res_id=r.id) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
                 <button type="submit" class="del-btn">حذف</button>
               </form>
             </td>
           </tr>
           {% else %}
-          <tr><td colspan="12" style="text-align:center; padding: 30px;">لا توجد حجوزات حتى الآن.</td></tr>
+          <tr><td colspan="13" style="text-align:center; padding: 30px;">لا توجد حجوزات حتى الآن.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+
+    <div class="status-toast" id="statusToast"></div>
+
+    <script>
+      (function () {
+        // لوّن كل قائمة حالة بلون حالتها الحالية
+        function paintSelect(sel) {
+          var opt = sel.options[sel.selectedIndex];
+          var color = opt ? opt.getAttribute('data-color') : '#f39c12';
+          sel.style.backgroundColor = color;
+        }
+        document.querySelectorAll('.js-status-select').forEach(paintSelect);
+
+        // لوّن رقائق الفلاتر بألوانها
+        document.querySelectorAll('.status-chip[data-filter]').forEach(function (chip) {
+          if (chip.dataset.filter === 'all') return;
+          chip.style.setProperty('--chip-color', chip.style.getPropertyValue('--chip-color'));
+        });
+
+        var toast = document.getElementById('statusToast');
+        var toastTimer = null;
+        function showToast(msg) {
+          toast.textContent = msg;
+          toast.classList.add('show');
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2200);
+        }
+
+        // تحديث الحالة عبر AJAX دون إعادة تحميل الصفحة
+        document.querySelectorAll('.js-status-select').forEach(function (sel) {
+          sel.addEventListener('change', function () {
+            var resId = sel.getAttribute('data-res-id');
+            var newStatus = sel.value;
+            var row = sel.closest('tr');
+            sel.disabled = true;
+
+            fetch('/admin/status/' + resId, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'fetch'
+              },
+              body: 'status=' + encodeURIComponent(newStatus)
+            })
+              .then(function (res) { return res.json(); })
+              .then(function (data) {
+                sel.disabled = false;
+                if (data.ok) {
+                  paintSelect(sel);
+                  row.setAttribute('data-status', data.status);
+                  showToast('تم تحديث الحالة إلى: ' + data.icon + ' ' + data.label_ar);
+                  applyFilter(currentFilter);
+                  updateChipCounts();
+                } else {
+                  showToast('حدث خطأ أثناء تحديث الحالة');
+                }
+              })
+              .catch(function () {
+                sel.disabled = false;
+                showToast('تعذّر الاتصال بالخادم');
+              });
+          });
+        });
+
+        // فلترة الجدول حسب الحالة
+        var currentFilter = 'all';
+        var chips = document.querySelectorAll('.status-chip[data-filter]');
+
+        function applyFilter(filter) {
+          currentFilter = filter;
+          document.querySelectorAll('#reservationsBody tr[data-status]').forEach(function (row) {
+            var match = (filter === 'all') || (row.getAttribute('data-status') === filter);
+            row.style.display = match ? '' : 'none';
+          });
+        }
+
+        function updateChipCounts() {
+          var counts = { all: 0 };
+          document.querySelectorAll('#reservationsBody tr[data-status]').forEach(function (row) {
+            var st = row.getAttribute('data-status');
+            counts.all++;
+            counts[st] = (counts[st] || 0) + 1;
+          });
+          chips.forEach(function (chip) {
+            var f = chip.dataset.filter;
+            var countEl = chip.querySelector('.chip-count');
+            if (countEl) countEl.textContent = counts[f] || 0;
+          });
+        }
+
+        chips.forEach(function (chip) {
+          chip.addEventListener('click', function () {
+            chips.forEach(function (c) {
+              c.classList.remove('active');
+              c.style.background = '#fff';
+              c.style.color = '';
+            });
+            chip.classList.add('active');
+            var color = chip.dataset.filter === 'all' ? 'var(--brand-navy)' : chip.style.getPropertyValue('--chip-color');
+            chip.style.background = color;
+            applyFilter(chip.dataset.filter);
+          });
+        });
+      })();
+    </script>
     {% endif %}
 
     {% if active_tab == 'catalog' %}
