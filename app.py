@@ -22,7 +22,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "musab-phone-super-secret-key-2026
 # يجب ضبط متغيّر البيئة DATABASE_URL قبل تشغيل الموقع، مثال:
 #   postgresql://user:password@host/dbname?sslmode=require
 # ---------------------------------------------------------
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:npg_x3a9ohjbCuKz@ep-odd-wind-aea2pu6n-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
 if not DATABASE_URL:
     raise RuntimeError(
         "لم يتم ضبط متغيّر البيئة DATABASE_URL. أضف رابط قاعدة بيانات PostgreSQL "
@@ -270,10 +270,10 @@ def status_info(status_id):
 
 
 GALLERY = [
-    {"color": "أزرق تيتانيوم", "file": "phone-1.jpg", "hex": "#4a6fa5"},
-    {"color": "أبيض سماوي", "file": "phone-2.jpg", "hex": "#d7dee6"},
+
+    {"color": " سماوي فاتح", "file": "phone-2.jpg", "hex": "#d7dee6"},
     {"color": "أسود فضائي", "file": "phone-3.jpg", "hex": "#1c1c1e"},
-    {"color": "ذهبي طبيعي", "file": "phone-4.jpg", "hex": "#d4af6a"},
+    {"color": "أبيض  تلجي", "file": "phone-4.jpg", "hex": "#d4af6a"},
     {"color": "بنفسجي داكن", "file": "phone-5.jpg", "hex": "#5b3a76"},
 ]
 
