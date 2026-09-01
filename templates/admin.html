@@ -161,7 +161,7 @@
             <td>{{ r.email or "-" }}</td>
             <td>{{ r.city or "-" }}</td>
             <td>{{ model_names.get(r.model, r.model) }}</td>
-            <td>{{ r.color }}</td>
+            <td>{{ color_name(r.color) }}</td>
             <td>{{ r.storage }}</td>
             <td>{{ r.custom_request or "-" }}</td>
             <td>{{ r.created_at[:16].replace("T", " ") }}</td>

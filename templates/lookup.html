@@ -61,7 +61,7 @@
           <img src="{{ url_for('static', filename='qrcodes/' ~ r.booking_ref ~ '.png') }}" alt="QR">
           <div class="lookup-result-info">
             <div><span>{{ t.lookup_ref }}</span><strong>{{ r.booking_ref }}</strong></div>
-            <div><span>{{ t.lookup_model }}</span><strong>{{ r.model_name }} - {{ r.color }} - {{ r.storage }}</strong></div>
+            <div><span>{{ t.lookup_model }}</span><strong>{{ r.model_name }} - {{ color_name(r.color) }} - {{ r.storage }}</strong></div>
             <div><span>{{ t.lookup_date }}</span><strong>{{ r.created_at[:16].replace("T", " ") }}</strong></div>
           </div>
           <a href="{{ url_for('thankyou', ref=r.booking_ref) }}" class="btn btn-outline">{{ t.lookup_view }}</a>

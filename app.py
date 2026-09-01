@@ -82,7 +82,6 @@ CURRENCY = "د.ل"
 SHOW_PRICES = False
 TOTAL_STOCK = 100
 
-
 # ---------------------------------------------------------
 # قاعدة البيانات
 # ---------------------------------------------------------
@@ -212,6 +211,38 @@ def get_stock_status():
 
 
 # ---------------------------------------------------------
+# الألوان الأربعة الرسمية لأجهزة آيفون 18 (أبيض / سماوي / أسود / بنفسجي)
+# كل لون له مُعرّف ثابت (id) لا يتغيّر، واسم عربي وإنجليزي يُعرضان
+# حسب لغة الموقع الحالية، مع صورة الهاتف ولون العينة (hex) الخاصين به.
+# ---------------------------------------------------------
+COLOR_DEFS = [
+    {"id": "snow_white",  "ar": "أبيض تلجي",   "en": "Snow White",  "hex": "#eeeeee", "file": "phone-2.png"},
+    {"id": "sky_blue",    "ar": "سماوي فاتح",  "en": "Sky Blue",    "hex": "#c1cde5", "file": "phone-4.jpg"},
+    {"id": "space_black", "ar": "أسود فضائي",  "en": "Space Black", "hex": "#1c1c1e", "file": "phone-3.png"},
+    {"id": "dark_purple", "ar": "بنفسجي داكن", "en": "Dark Purple", "hex": "#3e1c2e", "file": "phone-5.png"},
+]
+
+# ألوان طلب VIP الخاص (منفصلة عن الألوان الأربعة الرسمية أعلاه)
+VIP_COLOR_DEFS = [
+    {"id": "vip_gold24",       "ar": "طلاء ذهبي 24 قيراط",     "en": "24-Karat Gold Plating"},
+    {"id": "vip_silver",       "ar": "طلاء فضي",                "en": "Silver Plating"},
+    {"id": "vip_custom_design", "ar": "تصميم مخصص حسب الطلب",   "en": "Fully Custom Design"},
+]
+
+# قاموس موحّد لكل الألوان (الرسمية + VIP) بالمعرّف كمفتاح، يُستخدم للترجمة والعرض
+COLOR_BY_ID = {c["id"]: c for c in COLOR_DEFS + VIP_COLOR_DEFS}
+
+
+def color_display(color_id, lang="ar"):
+    """يحوّل مُعرّف اللون إلى اسمه المترجم حسب اللغة. إن كان النص المخزَّن
+    قديماً (نص عربي حر من نسخة سابقة) يُعاد كما هو دون تعديل."""
+    c = COLOR_BY_ID.get(color_id)
+    if c:
+        return c.get(lang) or c.get("ar") or color_id
+    return color_id
+
+
+# ---------------------------------------------------------
 # بيانات المنتج: كل موديل له مجموعة ألوان وسعات خاصة فيه
 # (iPhone 11 له ألوانه الأصلية الخاصة، منفصلة عن ألوان 18)
 # ---------------------------------------------------------
@@ -221,7 +252,7 @@ MODELS = [
         "id": "iphone18",
         "name": "iPhone 18",
         "price": 0,
-        "colors": ["أزرق تيتانيوم", "أبيض سماوي", "أسود فضائي", "ذهبي طبيعي", "بنفسجي داكن"],
+        "colors": [c["id"] for c in COLOR_DEFS],
         "storages": ["256GB", "512GB", "1TB", "2TB"],
         "is_vip": False,
     },
@@ -229,7 +260,7 @@ MODELS = [
         "id": "iphone18_pro",
         "name": "iPhone 18 Pro",
         "price": 0,
-        "colors": ["أزرق تيتانيوم", "أبيض سماوي", "أسود فضائي", "ذهبي طبيعي", "بنفسجي داكن"],
+        "colors": [c["id"] for c in COLOR_DEFS],
         "storages": ["256GB", "512GB", "1TB", "2TB"],
         "is_vip": False,
     },
@@ -237,7 +268,7 @@ MODELS = [
         "id": "iphone18_pro_max",
         "name": "iPhone 18 Pro Max",
         "price": 0,
-        "colors": ["أزرق تيتانيوم", "أبيض سماوي", "أسود فضائي", "ذهبي طبيعي", "بنفسجي داكن"],
+        "colors": [c["id"] for c in COLOR_DEFS],
         "storages": ["256GB", "512GB", "1TB", "2TB"],
         "is_vip": False,
     },
@@ -245,7 +276,7 @@ MODELS = [
         "id": "vip_custom",
         "name": "VIP - طلب خاص",
         "price": 0,
-        "colors": ["طلاء ذهبي 24 قيراط", "طلاء فضي", "تصميم مخصص حسب الطلب"],
+        "colors": [c["id"] for c in VIP_COLOR_DEFS],
         "storages": ["256GB", "512GB", "1TB", "2TB"],
         "is_vip": True,
     },
@@ -269,13 +300,8 @@ def status_info(status_id):
     return ORDER_STATUS_MAP.get(status_id, ORDER_STATUS_MAP["pending"])
 
 
-GALLERY = [
-
-    {"color": " سماوي فاتح", "file": "phone-2.jpg", "hex": "#d7dee6"},
-    {"color": "أسود فضائي", "file": "phone-3.jpg", "hex": "#1c1c1e"},
-    {"color": "أبيض  تلجي", "file": "phone-4.jpg", "hex": "#d4af6a"},
-    {"color": "بنفسجي داكن", "file": "phone-5.jpg", "hex": "#5b3a76"},
-]
+def _normalize_color_text(s):
+    return re.sub(r"\s+", " ", (s or "").strip())
 
 
 def get_color_sales_counts():
@@ -289,13 +315,26 @@ def get_color_sales_counts():
 
 
 def get_gallery_with_sales():
-    """يبني قائمة الألوان مع عدد الحجوزات لكل لون، ويحدد اللون الأكثر مبيعاً."""
+    """يبني قائمة الألوان الأربعة (مع صورها ومبيعاتها) لعرضها في قسم
+    'اختر لونك المفضل' بالصفحة الرئيسية، مترجمة حسب لغة الموقع الحالية."""
+    lang = get_lang()
     counts = get_color_sales_counts()
     gallery = []
-    for g in GALLERY:
-        item = dict(g)
-        item["count"] = counts.get(g["color"], 0)
-        gallery.append(item)
+    for c in COLOR_DEFS:
+        # الحجوزات الجديدة تُخزَّن بمعرّف اللون (id)، والحجوزات القديمة قد تكون
+        # مخزَّنة بنص عربي حر - نجمع الاثنين هنا لعرض عدد مبيعات صحيح
+        count = counts.get(c["id"], 0)
+        target_norm = _normalize_color_text(c["ar"])
+        for raw_color, n in counts.items():
+            if raw_color != c["id"] and _normalize_color_text(raw_color) == target_norm:
+                count += n
+        gallery.append({
+            "id": c["id"],
+            "color": c.get(lang) or c["ar"],
+            "hex": c["hex"],
+            "file": c["file"],
+            "count": count,
+        })
     max_count = max((g["count"] for g in gallery), default=0)
     for g in gallery:
         g["is_bestseller"] = max_count > 0 and g["count"] == max_count
@@ -339,7 +378,7 @@ TRANSLATIONS = {
         "f2_title": "حجز آمن 100%", "f2_desc": "بياناتك محمية بالكامل، ولا يتم أي خصم مالي عند الحجز.",
         "f3_title": "دعم فوري", "f3_desc": "فريق مصعب فون جاهز للرد على استفساراتك في أي وقت.",
         "f4_title": "أفضل الأسعار", "f4_desc": "أسعار تنافسية وعروض حصرية للحاجزين الأوائل فقط.",
-        "gallery_title": "اختر لونك المفضل", "gallery_sub": "iPhone 18 متوفر بخمسة ألوان مميزة",
+        "gallery_title": "اختر لونك المفضل", "gallery_sub": "iPhone 18 متوفر بأربعة ألوان مميزة",
         "gallery_sold_label": "حجز حتى الآن", "gallery_bestseller": "🏆 الأكثر مبيعاً",
         "brand_tagline": "رقم واحد في السوق الليبي لمنتجات Apple واكسسواراتها",
         "models_title": "اختر موديلك المفضل",
@@ -398,7 +437,7 @@ TRANSLATIONS = {
         "f2_title": "100% secure booking", "f2_desc": "Your data is fully protected, no charge is taken at booking time.",
         "f3_title": "Instant support", "f3_desc": "The Musab Phone team is ready to answer your questions anytime.",
         "f4_title": "Best prices", "f4_desc": "Competitive prices and exclusive offers for early bookers.",
-        "gallery_title": "Pick your favorite color", "gallery_sub": "iPhone 18 comes in five stunning colors",
+        "gallery_title": "Pick your favorite color", "gallery_sub": "iPhone 18 comes in four stunning colors",
         "gallery_sold_label": "booked so far", "gallery_bestseller": "🏆 Best seller",
         "brand_tagline": "Libya's #1 destination for Apple products & accessories",
         "models_title": "Choose your model",
@@ -443,7 +482,9 @@ def get_lang():
 @app.context_processor
 def inject_lang_helpers():
     lang = get_lang()
-    return {"t": TRANSLATIONS[lang], "lang": lang}
+    # color_name متاحة داخل القوالب لترجمة مُعرّف اللون المخزَّن في قاعدة
+    # البيانات إلى اسمه بلغة الموقع الحالية، مثال: {{ color_name(r.color) }}
+    return {"t": TRANSLATIONS[lang], "lang": lang, "color_name": lambda cid: color_display(cid, lang)}
 
 
 @app.route("/lang/<code>")
@@ -466,7 +507,7 @@ def generate_booking_qr(booking: dict) -> str:
         "البريد": booking.get("email") or "-",
         "المدينة": booking.get("city") or "-",
         "الموديل": booking["model_name"],
-        "اللون": booking["color"],
+        "اللون": color_display(booking["color"], "ar"),
         "السعة": booking["storage"],
         "تاريخ_الحجز": booking["created_at"],
     }
@@ -524,9 +565,28 @@ if not ADMIN_ONLY:
             "ORDER BY p.created_at DESC"
         ).fetchall()
         conn.close()
+
+        # نسخة من الموديلات مُجهَّزة لجافاسكريبت: كل لون يصبح كائن
+        # {id, name, file} بدل مجرّد نص، بحيث تُطابق الصورة الصحيحة دائماً
+        # وتُترجم تلقائياً حسب لغة الموقع الحالية (عربي/إنجليزي).
+        lang = get_lang()
+        models_for_js = []
+        for m in MODELS:
+            mm = dict(m)
+            mm["colors"] = [
+                {
+                    "id": cid,
+                    "name": color_display(cid, lang),
+                    "file": COLOR_BY_ID.get(cid, {}).get("file"),
+                }
+                for cid in m["colors"]
+            ]
+            models_for_js.append(mm)
+
         return render_template(
             "index.html",
             models=MODELS,
+            models_json=models_for_js,
             gallery=get_gallery_with_sales(),
             deadline_iso=RESERVATION_DEADLINE.isoformat(),
             deadline_readable=RESERVATION_DEADLINE.strftime("%Y-%m-%d %I:%M %p"),
@@ -639,7 +699,7 @@ if not ADMIN_ONLY:
                 f"مرحباً {COMPANY_NAME}، تم تأكيد حجزي ✅\n"
                 f"رقم الحجز: {booking['booking_ref']}\n"
                 f"الاسم: {booking['full_name']}\n"
-                f"الموديل: {booking['model_name']} - {booking['color']} - {booking['storage']}\n"
+                f"الموديل: {booking['model_name']} - {color_display(booking['color'], 'ar')} - {booking['storage']}\n"
                 f"للاستفسار أو المبيعات: {SALES_PHONE}\n"
                 f"للصيانة: {MAINTENANCE_PHONE}"
             )

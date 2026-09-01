@@ -1,5 +1,7 @@
 // يبني قوائم السعات ديناميكياً + نافذة اختيار اللون بالصور (بدل القائمة المنسدلة)
-// عند اختيار الموديل تظهر صور الألوان الفعلية (نفس صور معرض الألوان في الصفحة الرئيسية)
+// كل موديل يصل من الخادم ومعه ألوانه كـ {id, name, file} جاهزة ومترجمة
+// حسب لغة الموقع الحالية، فلا حاجة لمطابقة نصوص (وهو ما كان يسبب عدم
+// ظهور بعض الصور سابقاً بسبب اختلاف بسيط في المسافات بين النصوص).
 // وعند اختيار العميل للون، يغلق النظام النافذة تلقائياً ويرجعه لإكمال باقي بيانات الحجز
 document.addEventListener("DOMContentLoaded", function () {
   const modelSelect = document.getElementById("model-select");
@@ -21,13 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!modelSelect || !storageSelect || !colorTrigger) return;
 
   const models = window.MUSAB_MODELS || [];
-  const gallery = window.MUSAB_GALLERY || [];
   const t = window.MUSAB_T || {};
-
-  function galleryFileFor(colorName) {
-    const found = gallery.find(function (g) { return g.color === colorName; });
-    return found ? found.file : null;
-  }
 
   function fillSelect(select, values, placeholder) {
     select.innerHTML = "";
@@ -65,17 +61,19 @@ document.addEventListener("DOMContentLoaded", function () {
     document.body.style.overflow = "";
   }
 
-  function selectColor(colorName, file) {
-    colorValue.value = colorName;
+  function selectColor(color) {
+    // نخزّن معرّف اللون (id) في الحقل المرسَل للخادم حتى يبقى الحجز صحيحاً
+    // بغض النظر عن لغة الموقع، ونعرض للعميل الاسم المترجم مع صورته
+    colorValue.value = color.id;
     colorPlaceholder.style.display = "none";
     colorChosen.style.display = "flex";
-    if (file) {
-      colorChosenImg.src = "/static/img/" + file;
+    if (color.file) {
+      colorChosenImg.src = "/static/img/" + color.file;
       colorChosenImg.style.display = "block";
     } else {
       colorChosenImg.style.display = "none";
     }
-    colorChosenName.textContent = colorName;
+    colorChosenName.textContent = color.name;
     closeColorModal();
 
     // النظام يرجع العميل تلقائياً لإكمال باقي بيانات الحجز (حقل السعة التالي)
@@ -87,25 +85,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function buildColorModal(colorsList) {
     modalGrid.innerHTML = "";
-    colorsList.forEach(function (colorName) {
-      const file = galleryFileFor(colorName);
+    colorsList.forEach(function (color) {
       const card = document.createElement("button");
       card.type = "button";
       card.className = "color-modal-card";
-      card.dataset.color = colorName;
+      card.dataset.color = color.id;
 
-      if (file) {
+      if (color.file) {
         card.innerHTML =
-          '<span class="color-modal-img-wrap"><img src="/static/img/' + file + '" alt="' + colorName + '" loading="lazy"></span>' +
-          '<span class="color-modal-name">' + colorName + "</span>";
+          '<span class="color-modal-img-wrap"><img src="/static/img/' + color.file + '" alt="' + color.name + '" loading="lazy"></span>' +
+          '<span class="color-modal-name">' + color.name + "</span>";
       } else {
         card.innerHTML =
           '<span class="color-modal-img-wrap color-modal-icon">📱</span>' +
-          '<span class="color-modal-name">' + colorName + "</span>";
+          '<span class="color-modal-name">' + color.name + "</span>";
       }
 
       card.addEventListener("click", function () {
-        selectColor(colorName, file);
+        selectColor(color);
       });
 
       modalGrid.appendChild(card);
