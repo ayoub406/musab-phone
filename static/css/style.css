@@ -780,6 +780,90 @@ img { max-width: 100%; display: block; }
 }
 .gallery-sold strong { color: var(--brand-blue); font-weight: 800; }
 
+/* ===== منتجات لوحة التحكم (هواتف/إكسسوارات يضيفها الأدمن) ===== */
+/* صندوق صورة بنسبة ثابتة (مربّع تقريباً) يعطي نفس الطول والارتفاع لكل
+   البطاقات بغض النظر عن مقاس الصورة الأصلية التي رفعها الأدمن، ويحافظ على
+   نفس الشكل الأنيق على كل أحجام الشاشات (جوال/تابلت/كمبيوتر). */
+.product-img-wrap {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  background: var(--brand-blue-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.product-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-img-wrap img {
+  transform: scale(1.05);
+}
+
+.product-img-wrap.img-missing { position: relative; }
+.product-img-wrap.img-missing img { display: none; }
+.product-img-wrap.img-missing::after {
+  content: "📦";
+  font-size: 2.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.product-info {
+  padding: 14px 14px 18px;
+  text-align: start;
+}
+
+.product-name {
+  font-weight: 800;
+  color: var(--brand-navy);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.product-cat {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--brand-blue);
+  background: var(--brand-blue-light);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.product-desc {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--gray-500);
+  /* لا نسمح بوصف طويل جداً يكسر تناسق البطاقات - نقصّه بأناقة بعد 3 أسطر */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-price {
+  margin-top: 10px;
+  font-weight: 800;
+  color: var(--brand-blue);
+  font-size: 1.05rem;
+}
+
+.product-grid { align-items: stretch; }
+.product-card { display: flex; flex-direction: column; text-align: start; }
+
 /* ===== المميزات ===== */
 .features {
   padding: 80px 0;

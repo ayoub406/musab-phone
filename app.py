@@ -8,12 +8,29 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 import psycopg2
 import psycopg2.extras
 import os
+import io
 import json
 import mimetypes
 import qrcode
 from datetime import datetime, timedelta
 import re
 from werkzeug.utils import secure_filename
+from PIL import Image, ImageOps
+
+# دعم صور آيفون بصيغة HEIC/HEIF (الصيغة الافتراضية لكاميرا آيفون) حتى تُفتح
+# وتُحوَّل تلقائياً مثل أي صورة أخرى. إن لم تكن المكتبة مثبتة، يستمر الموقع
+# بالعمل بباقي الصيغ (JPG/PNG/WebP...) بدون مشاكل.
+try:
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+except Exception:
+    pass
+
+# الحد الأقصى لأطول ضلع في صورة المنتج بعد المعالجة (بالبكسل). هذا يضمن أن
+# أي صورة يرفعها الأدمن - مهما كان حجمها الأصلي (مثلاً صورة كاميرا آيفون
+# الحقيقية بعدة ميجابكسل) - تُخزَّن بمقاس مناسب وخفيف يظهر بشكل ناعم وسريع
+# على كل الهواتف بدل أن تظهر ضخمة أو تفشل بالتحميل.
+PRODUCT_IMAGE_MAX_DIM = 1600
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "musab-phone-super-secret-key-2026")  # غيّرها في الإنتاج
@@ -941,6 +958,37 @@ if not PUBLIC_ONLY:
         conn.close()
         return redirect(url_for("admin_catalog"))
 
+    def process_product_image(raw_bytes):
+        """يفتح صورة المنتج (مهما كانت صيغتها الأصلية - JPG/PNG/WebP/HEIC..)،
+        يصحّح اتجاهها حسب بيانات EXIF (لأن كثير من صور كاميرات الهواتف تُحفظ
+        مستلقية ثم تُدار عرضاً فقط عبر وسم دوران)، يصغّرها إلى مقاس مناسب لكل
+        الهواتف والشاشات، ثم يعيدها بصيغة موحّدة (JPEG أو PNG إن كانت تحتوي
+        شفافية) جاهزة للعرض بسرعة ونعومة. يرجع None إذا تعذّرت قراءة الصورة."""
+        try:
+            img = Image.open(io.BytesIO(raw_bytes))
+            img.load()
+        except Exception:
+            return None
+
+        img = ImageOps.exif_transpose(img)
+
+        has_alpha = img.mode in ("RGBA", "LA") or (
+            img.mode == "P" and "transparency" in img.info
+        )
+
+        if max(img.size) > PRODUCT_IMAGE_MAX_DIM:
+            img.thumbnail((PRODUCT_IMAGE_MAX_DIM, PRODUCT_IMAGE_MAX_DIM), Image.LANCZOS)
+
+        buf = io.BytesIO()
+        if has_alpha:
+            img = img.convert("RGBA")
+            img.save(buf, format="PNG", optimize=True)
+            return buf.getvalue(), "image/png", "png"
+        else:
+            img = img.convert("RGB")
+            img.save(buf, format="JPEG", quality=85, optimize=True)
+            return buf.getvalue(), "image/jpeg", "jpg"
+
     @app.route("/admin/products/add", methods=["POST"])
     def admin_add_product():
         if not admin_required():
@@ -962,9 +1010,18 @@ if not PUBLIC_ONLY:
                 if len(raw) > 8 * 1024 * 1024:
                     flash("حجم الصورة كبير جداً (الحد الأقصى 8 ميجابايت).", "error")
                 else:
-                    image_filename = secure_filename(file.filename)
-                    image_bytes = psycopg2.Binary(raw)
-                    image_mime = file.mimetype or mimetypes.guess_type(image_filename)[0] or "image/jpeg"
+                    processed = process_product_image(raw)
+                    if processed is None:
+                        flash(
+                            "تعذّرت معالجة هذه الصورة. جرّب صورة أخرى بصيغة JPG أو PNG "
+                            "(أو تأكد أنها ليست تالفة).",
+                            "error",
+                        )
+                    else:
+                        image_data, image_mime, out_ext = processed
+                        base_name = file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
+                        image_filename = secure_filename(f"{base_name}.{out_ext}")
+                        image_bytes = psycopg2.Binary(image_data)
             else:
                 flash("صيغة الصورة غير مدعومة.", "error")
 

@@ -202,18 +202,26 @@
         {% endif %}
       </div>
       {% if products %}
-      <div class="gallery-grid">
+      <div class="gallery-grid product-grid">
         {% for p in products %}
-        <div class="gallery-card">
-          <div class="gallery-img-wrap">
+        <div class="gallery-card product-card">
+          <div class="product-img-wrap">
             {% if p.image_mime %}
             <img src="{{ url_for('product_image', prod_id=p.id) }}" alt="{{ p.name }}" loading="lazy"
-                 onerror="this.closest('.gallery-img-wrap').classList.add('img-missing');">
+                 onerror="this.closest('.product-img-wrap').classList.add('img-missing');">
             {% else %}
-            <div class="gallery-img-wrap img-missing"></div>
+            <div class="product-img-wrap img-missing"></div>
             {% endif %}
           </div>
-          <div class="gallery-caption">{{ p.name }}{% if show_prices and p.price %} - {{ "{:,.0f}".format(p.price) }} {{ currency }}{% endif %}</div>
+          <div class="product-info">
+            <div class="product-name">{{ p.name }}{% if p.cat_ar %}<span class="product-cat">{{ p.cat_ar }}</span>{% endif %}</div>
+            {% if p.description %}
+            <p class="product-desc">{{ p.description }}</p>
+            {% endif %}
+            {% if show_prices and p.price %}
+            <div class="product-price">{{ "{:,.0f}".format(p.price) }} {{ currency }}</div>
+            {% endif %}
+          </div>
         </div>
         {% endfor %}
       </div>
