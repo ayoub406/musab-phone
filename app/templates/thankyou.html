@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تم الحجز بنجاح | مصعب فون</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .thankyou-wrap {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .check-circle {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--brand-blue-light);
+      color: var(--brand-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin-bottom: 24px;
+    }
+    .thankyou-wrap h1 { color: var(--brand-navy); margin-bottom: 12px; font-size: 2rem; }
+    .thankyou-wrap p { color: var(--gray-500); max-width: 480px; margin-bottom: 20px; }
+
+    .qr-card {
+      background: #fff;
+      border: 1px solid var(--gray-100);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 26px;
+      max-width: 340px;
+      width: 100%;
+      margin: 10px 0 26px;
+    }
+    .qr-card img { width: 100%; max-width: 220px; margin: 0 auto 14px; border-radius: 10px; }
+    .qr-ref { font-weight: 800; color: var(--brand-navy); font-size: 1.1rem; margin-bottom: 4px; }
+    .qr-hint { font-size: 0.82rem; color: var(--gray-500); margin-bottom: 0; }
+
+    .booking-summary {
+      text-align: right;
+      background: var(--gray-50);
+      border-radius: 14px;
+      padding: 16px 20px;
+      max-width: 340px;
+      width: 100%;
+      margin-bottom: 26px;
+      font-size: 0.9rem;
+    }
+    .booking-summary div { display: flex; justify-content: space-between; padding: 5px 0; color: var(--gray-700); }
+    .booking-summary div span:first-child { color: var(--gray-500); }
+
+    .action-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn-whatsapp {
+      background: #25D366; color: #fff; padding: 15px 28px; border-radius: 999px;
+      font-weight: 700; display: inline-block;
+    }
+    .btn-print {
+      background: var(--brand-navy); color: #fff; padding: 15px 28px; border-radius: 999px;
+      font-weight: 700; display: inline-flex; align-items:center; gap:8px; border:none; cursor:pointer;
+      font-family: inherit; font-size: 1rem;
+    }
+    .btn-print:hover { background: #06192e; }
+    .btn-download {
+      background: #fff; color: var(--brand-blue); padding: 15px 28px; border-radius: 999px;
+      font-weight: 700; display: inline-flex; align-items:center; gap:8px; border: 2px solid var(--brand-blue);
+    }
+    .btn-download:hover { background: var(--brand-blue-light); }
+    .support-line { margin-top: 22px; font-size: 0.85rem; color: var(--gray-500); }
+    .support-line strong { color: var(--brand-navy); }
+
+    /* ===== تنسيق الطباعة: يظهر فقط بطاقة الباركود عند الطباعة ===== */
+    @media print {
+      body * { visibility: hidden; }
+      .navbar, .thankyou-wrap > h1, .thankyou-wrap > p, .action-row, .support-line, .check-circle { display: none !important; }
+      .qr-card, .qr-card *, .booking-summary, .booking-summary *, .print-logo, .print-logo * { visibility: visible; }
+      .qr-card { position: absolute; top: 0; right: 50%; transform: translateX(50%); box-shadow:none; border: 1px solid #ccc; }
+      .booking-summary { position: absolute; top: 400px; right: 50%; transform: translateX(50%); }
+      .print-logo { position: absolute; top: -40px; right: 50%; transform: translateX(50%); display: block !important; visibility: visible; text-align:center; }
+    }
+    .print-logo { display: none; }
+  </style>
+</head>
+<body>
+{% import "_logo.html" as L %}
+  <header class="navbar">
+    <div class="container">
+      {{ L.logo("thankyou") }}
+    </div>
+  </header>
+  <div class="print-logo">{{ L.logo("print", size=34) }}</div>
+
+  <div class="thankyou-wrap">
+    <div class="check-circle">✓</div>
+    <h1>تم استلام حجزك بنجاح!</h1>
+    <p>شكراً لثقتك بـ{{ company_name }}. احتفظ برمز QR أدناه وأحضره معك عند الاستلام - فيه كامل بيانات حجزك.</p>
+
+    {% if booking %}
+    <div class="qr-card">
+      <img src="{{ url_for('static', filename='qrcodes/' ~ booking.booking_ref ~ '.png') }}" alt="QR كود الحجز" id="qr-image">
+      <div class="qr-ref">رقم الحجز: {{ booking.booking_ref }}</div>
+      <p class="qr-hint">اعرض هذا الرمز عند استلام الجهاز من الفرع</p>
+    </div>
+
+    <div class="booking-summary">
+      <div><span>الاسم</span><span>{{ booking.full_name }}</span></div>
+      <div><span>الجوال</span><span>{{ booking.phone }}</span></div>
+      <div><span>الموديل</span><span>{{ booking.model_name }}</span></div>
+      <div><span>اللون</span><span>{{ color_name(booking.color) }}</span></div>
+      <div><span>السعة</span><span>{{ booking.storage }}</span></div>
+    </div>
+
+    <div class="action-row">
+      <button type="button" class="btn-print" onclick="window.print()">🖨️ طباعة الباركود</button>
+      <a href="{{ url_for('static', filename='qrcodes/' ~ booking.booking_ref ~ '.png') }}"
+         download="{{ booking.booking_ref }}.png" class="btn-download">⬇️ تحميل الباركود</a>
+    </div>
+    {% endif %}
+
+    <div class="action-row" style="margin-top:14px;">
+      <a href="{{ url_for('index') }}" class="btn btn-primary">العودة للصفحة الرئيسية</a>
+      {% if whatsapp_link %}
+      <a href="{{ whatsapp_link }}" target="_blank" rel="noopener" class="btn-whatsapp">💬 أرسل تأكيد الحجز عبر واتساب</a>
+      {% endif %}
+    </div>
+
+    <p class="support-line">للمبيعات: <strong>{{ sales_phone }}</strong> &nbsp;|&nbsp; للصيانة: <strong>{{ maintenance_phone }}</strong></p>
+  </div>
+</body>
+</html>

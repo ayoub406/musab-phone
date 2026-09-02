@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>دخول لوحة التحكم | مصعب فون</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body { background: var(--brand-navy); }
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-box {
+      background: #fff;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      border-radius: var(--radius);
+      padding: 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+    .login-box h2 { color: var(--brand-navy); margin-bottom: 4px; }
+    .login-box .sub { color: var(--gray-500); font-size: 0.85rem; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-box">
+      <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--brand-blue),var(--brand-navy));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#fff;font-size:1.6rem;">🔒</div>
+      <h2>لوحة تحكم مصعب فون</h2>
+      <p class="sub">نظام إداري منفصل عن الموقع العام</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('admin') }}" style="margin-top:20px;">
+        <div class="field" style="margin-bottom:16px; text-align:right;">
+          <label>اسم المستخدم</label>
+          <input type="text" name="username" required autocomplete="username">
+        </div>
+        <div class="field" style="margin-bottom:16px; text-align:right;">
+          <label>كلمة المرور</label>
+          <input type="password" name="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">دخول</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="{{ t.html_lang }}" dir="{{ t.dir }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ t.lookup_title }} | {{ company_name }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+    (function () {
+      var saved = localStorage.getItem("musab-theme");
+      if (saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    })();
+  </script>
+  <style>
+    .lookup-wrap { max-width: 640px; margin: 0 auto; padding: 60px 20px; }
+    .lookup-wrap h1 { color: var(--brand-navy); font-size: 1.7rem; margin-bottom: 8px; text-align: center; }
+    .lookup-wrap > p { color: var(--gray-500); text-align: center; margin-bottom: 30px; }
+    .lookup-form { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+    .lookup-form input {
+      flex: 1; min-width: 200px; padding: 14px 16px; border-radius: 12px;
+      border: 1.5px solid var(--gray-300); font-family: inherit; font-size: 1rem;
+      background: var(--surface); color: var(--gray-700);
+    }
+    .lookup-result-card {
+      background: var(--surface); border: 1px solid var(--gray-100); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 22px; margin-bottom: 18px; display: flex; gap: 20px;
+      flex-wrap: wrap; align-items: center;
+    }
+    .lookup-result-card img { width: 110px; height: 110px; border-radius: 10px; }
+    .lookup-result-info { flex: 1; min-width: 180px; }
+    .lookup-result-info div { display:flex; justify-content: space-between; padding: 3px 0; font-size: 0.92rem; }
+    .lookup-result-info div span:first-child { color: var(--gray-500); }
+    .lookup-result-info strong { color: var(--brand-navy); }
+    .lookup-empty { text-align: center; color: var(--gray-500); padding: 30px 0; }
+  </style>
+</head>
+<body>
+{% import "_logo.html" as L %}
+  <header class="navbar">
+    <div class="container">
+      {{ L.logo("lookup") }}
+      <a href="{{ url_for('index') }}" class="btn-nav">{{ t.nav_home }}</a>
+    </div>
+  </header>
+
+  <div class="lookup-wrap">
+    <h1>{{ t.lookup_title }}</h1>
+    <p>{{ t.lookup_sub }}</p>
+
+    <form method="POST" action="{{ url_for('lookup') }}" class="lookup-form">
+      <input type="tel" name="phone" placeholder="{{ t.lookup_placeholder }}" value="{{ phone }}" required>
+      <button type="submit" class="btn btn-primary">{{ t.lookup_btn }}</button>
+    </form>
+
+    {% if searched %}
+      {% if results %}
+        <p style="font-weight:700; color:var(--brand-navy); margin-bottom:14px;">{{ t.lookup_found }}</p>
+        {% for r in results %}
+        <div class="lookup-result-card">
+          <img src="{{ url_for('static', filename='qrcodes/' ~ r.booking_ref ~ '.png') }}" alt="QR">
+          <div class="lookup-result-info">
+            <div><span>{{ t.lookup_ref }}</span><strong>{{ r.booking_ref }}</strong></div>
+            <div><span>{{ t.lookup_model }}</span><strong>{{ r.model_name }} - {{ color_name(r.color) }} - {{ r.storage }}</strong></div>
+            <div><span>{{ t.lookup_date }}</span><strong>{{ r.created_at[:16].replace("T", " ") }}</strong></div>
+          </div>
+          <a href="{{ url_for('thankyou', ref=r.booking_ref) }}" class="btn btn-outline">{{ t.lookup_view }}</a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="lookup-empty">{{ t.lookup_none }}</div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+</body>
+</html>

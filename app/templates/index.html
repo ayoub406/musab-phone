@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="{{ t.html_lang }}" dir="{{ t.dir }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ company_name }} | {{ t.hero_title_pre }} {{ t.hero_title_high }}</title>
+  <meta name="description" content="{{ t.hero_sub }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}" type="image/png">
+  <script>
+    // تطبيق الوضع الليلي فوراً قبل الرسم لتفادي وميض الشاشة
+    (function () {
+      var saved = localStorage.getItem("musab-theme");
+      if (saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    })();
+  </script>
+</head>
+<body>
+{% import "_logo.html" as L %}
+{% import "_social.html" as S %}
+
+  <!-- ===== الهيدر ===== -->
+  <header class="navbar">
+    <div class="container">
+      {{ L.logo("nav", tagline=t.brand_tagline) }}
+
+      <nav class="nav-links" id="nav-links">
+        <a href="#home">{{ t.nav_home }}</a>
+        <a href="#gallery">{{ t.nav_gallery }}</a>
+        <a href="#products">{{ t.nav_models }}</a>
+        <a href="#growth">{{ t.nav_growth }}</a>
+        <a href="{{ url_for('lookup') }}">{{ t.nav_lookup }}</a>
+        <a href="#reserve">{{ t.nav_reserve }}</a>
+      </nav>
+      <div class="nav-actions">
+        {{ S.social_icons(social_links, "nav") }}
+        <a href="tel:{{ sales_phone }}" class="btn-support" title="{{ t.footer_sales }}">💼 {{ sales_phone }}</a>
+        <a href="tel:{{ maintenance_phone }}" class="btn-support btn-support--maint" title="{{ t.footer_maintenance }}">🛠️ {{ maintenance_phone }}</a>
+        <a href="{{ url_for('set_lang', code='en' if lang == 'ar' else 'ar') }}" class="btn-lang" title="Language / اللغة">
+          {{ "EN" if lang == "ar" else "AR" }}
+        </a>
+        <button class="btn-theme" id="theme-toggle" title="{{ t.theme_toggle }}" aria-label="{{ t.theme_toggle }}">
+          <span class="theme-icon-sun">☀️</span><span class="theme-icon-moon">🌙</span>
+        </button>
+        <a href="#reserve" class="btn-nav">{{ t.book_now }}</a>
+        <button class="nav-toggle" id="nav-toggle" aria-label="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== الهيرو ===== -->
+  <section class="hero" id="home">
+    <div class="container">
+      <span class="badge">{{ t.hero_badge }}</span>
+      <h1>{{ t.hero_title_pre }} <span>{{ t.hero_title_high }}</span><br> {{ t.hero_title_post }}</h1>
+      <p class="subtitle">{{ t.hero_sub }}</p>
+      <div class="hero-cta">
+        <a href="#reserve" class="btn btn-primary">{{ t.hero_cta1 }}</a>
+        <a href="#products" class="btn btn-outline">{{ t.hero_cta2 }}</a>
+      </div>
+
+      <!-- ===== صندوق VIP الذهبي (تصميم زجاجي أقوى، بنفس الحجم) ===== -->
+      {% for m in models %}
+        {% if m.is_vip %}
+        <div class="vip-standalone">
+          <div class="vip-crown">👑</div>
+          <div class="model-card vip-card vip-card--glass">
+            <span class="vip-card-shine"></span>
+            <h3><span class="vip-shine-text">VIP</span> <span class="vip-sub-text">- طلب خاص</span></h3>
+            <div class="price price-tbd">{{ t.vip_desc }}</div>
+            <button type="button" class="btn btn-outline js-pick-model" data-model="{{ m.id }}">
+              {{ t.vip_cta }}
+            </button>
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+
+      <!-- ===== بانر ترويجي ===== -->
+      <a href="#reserve" class="promo-banner">
+        <span class="promo-banner-glow"></span>
+        <span class="promo-phone-wrap">
+          <img src="{{ url_for('static', filename='img/promo-banner.jpg') }}" alt="iPhone 18 Pro Max" class="promo-phone-img" loading="lazy">
+          <span class="promo-phone-shine"></span>
+        </span>
+    <h3>
+  {% if lang == "ar" %}
+    {{ "كن أول الحاصلين على آيفون<br>18 برو - برو ماكس" | safe }}
+  {% else %}
+    {{ "Be the first to get the iPhone<br>18 Pro - Pro Max" | safe }}
+  {% endif %}
+</h3>
+
+        <p>{{ "احجز الآن وكن من أوائل المستلمين فور توفر الجهاز" if lang == "ar" else "Reserve now and be among the first to receive it" }}</p>
+        <span class="promo-banner-cta">{{ t.hero_cta1 }} ←</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== العداد التنازلي ===== -->
+  <section class="countdown-section">
+    <div class="container">
+      <h2>{{ t.countdown_title }}</h2>
+      <p class="deadline-text">{{ t.deadline_prefix }} {{ deadline_readable }}</p>
+
+      <div id="countdown-wrap" class="countdown" data-deadline="{{ deadline_iso }}"
+           data-expired-text="{{ t.countdown_expired }}">
+        <div class="box"><span class="num" id="cd-days">00</span><span class="label">{{ t.cd_day }}</span></div>
+        <div class="box"><span class="num" id="cd-hours">00</span><span class="label">{{ t.cd_hour }}</span></div>
+        <div class="box"><span class="num" id="cd-minutes">00</span><span class="label">{{ t.cd_min }}</span></div>
+        <div class="box"><span class="num" id="cd-seconds">00</span><span class="label">{{ t.cd_sec }}</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== عداد الكمية المتاحة ===== -->
+  <section class="stock-section">
+    <div class="container">
+      <div class="stock-box" id="stock-box" data-endpoint="{{ url_for('api_stock') }}">
+        <div class="stock-top">
+          <span class="stock-label">{{ t.stock_label }}</span>
+          <span class="stock-numbers">
+            {{ t.stock_remaining }} <strong id="stock-remaining">{{ stock.remaining }}</strong> {{ t.stock_of }} {{ stock.total }} {{ t.stock_device }}
+          </span>
+        </div>
+        <div class="stock-bar-track">
+          <div class="stock-bar-fill" id="stock-bar-fill" style="width: {{ stock.percent }}%;"></div>
+        </div>
+        <div class="stock-bottom">
+          <span id="stock-percent">{{ stock.percent }}%</span> {{ t.stock_percent_note }}
+        </div>
+        <div id="stock-soldout" class="stock-soldout" {% if not stock.sold_out %}style="display:none;"{% endif %}>
+          {{ t.stock_soldout }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== الرسم البياني الحي لنمو الحجوزات ===== -->
+  <section class="growth-section" id="growth">
+    <span class="growth-decor growth-decor-1"></span>
+    <span class="growth-decor growth-decor-2"></span>
+    <div class="container">
+      <div class="section-title">
+        <h2>{{ t.growth_title }}</h2>
+        <p>{{ t.growth_sub }}</p>
+      </div>
+      <div class="growth-box" data-endpoint="{{ url_for('api_stock') }}">
+        <div class="growth-toast" id="growth-toast">🎉 {{ "حجز جديد الآن!" if lang == "ar" else "New booking just now!" }}</div>
+        <div class="growth-top">
+          <span class="growth-label"><span class="live-dot"></span>{{ t.growth_label }}</span>
+          <span class="growth-total" id="growth-total">{{ stock.reserved }}</span>
+        </div>
+
+        <div class="growth-stats-row growth-stats-row--simple">
+          <div class="growth-stat-chip">
+            <span class="chip-value" id="growth-remaining">{{ stock.remaining }}</span>
+            <span class="chip-label">{{ t.stock_label }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== معرض الألوان ===== -->
+  <section class="gallery-section" id="gallery">
+    <div class="container">
+      <div class="section-title">
+        <h2>{{ t.gallery_title }}</h2>
+        <p>{{ t.gallery_sub }}</p>
+      </div>
+      <div class="gallery-grid">
+        {% for g in gallery %}
+        <div class="gallery-card{{ ' gallery-card--best' if g.is_bestseller else '' }}" style="--swatch: {{ g.hex }};">
+          {% if g.is_bestseller %}
+          <span class="gallery-badge-best">{{ t.gallery_bestseller }}</span>
+          {% endif %}
+          <div class="gallery-img-wrap">
+            <img src="{{ url_for('static', filename='img/' ~ g.file) }}"
+                 alt="iPhone 18 - {{ g.color }}" loading="lazy"
+                 onerror="this.closest('.gallery-img-wrap').classList.add('img-missing');">
+          </div>
+          <div class="gallery-caption">{{ g.color }}</div>
+          <div class="gallery-sold">🔥 <strong>{{ g.count }}</strong> {{ t.gallery_sold_label }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== منتجات آبل (تُدار بالكامل من لوحة التحكم) ===== -->
+  <section class="products-section" id="products">
+    <div class="container">
+      <div class="section-title">
+        <h2>{{ "تصفح منتجات آبل الجديدة 2026" if lang == "ar" else "Browse Apple's New Products 2026" }}</h2>
+        {% if not products %}
+        <p>{{ "سيتم إضافة المنتجات قريباً من قبل فريقنا" if lang == "ar" else "Products will be added soon by our team" }}</p>
+        {% endif %}
+      </div>
+      {% if products %}
+      <div class="gallery-grid">
+        {% for p in products %}
+        <div class="gallery-card">
+          <div class="gallery-img-wrap">
+            {% if p.image_mime %}
+            <img src="{{ url_for('product_image', prod_id=p.id) }}" alt="{{ p.name }}" loading="lazy"
+                 onerror="this.closest('.gallery-img-wrap').classList.add('img-missing');">
+            {% else %}
+            <div class="gallery-img-wrap img-missing"></div>
+            {% endif %}
+          </div>
+          <div class="gallery-caption">{{ p.name }}{% if show_prices and p.price %} - {{ "{:,.0f}".format(p.price) }} {{ currency }}{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- ===== نموذج الحجز ===== -->
+  <section class="reserve-section" id="reserve">
+    <div class="container">
+      <div class="section-title">
+        <h2>{{ t.reserve_title }}</h2>
+        <p>{{ t.reserve_sub }}</p>
+      </div>
+
+      <div class="reserve-box">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('reserve') }}" method="POST" id="reserve-form">
+          <div class="form-grid">
+            <div class="field">
+              <label>{{ t.label_name }}</label>
+              <input type="text" name="full_name" placeholder="{{ t.ph_name }}" required>
+            </div>
+            <div class="field">
+              <label>{{ t.label_phone }}</label>
+              <input type="tel" name="phone" placeholder="{{ t.ph_phone }}" required>
+            </div>
+            <div class="field">
+              <label>{{ t.label_email }}</label>
+              <input type="email" name="email" placeholder="{{ t.ph_email }}">
+            </div>
+            <div class="field">
+              <label>{{ t.label_city }}</label>
+              <input type="text" name="city" placeholder="{{ t.ph_city }}">
+            </div>
+            <div class="field">
+              <label>{{ t.label_model }}</label>
+              <select name="model" id="model-select" required>
+                <option value="" disabled selected>{{ t.ph_choose_model }}</option>
+                {% for m in models %}
+                <option value="{{ m.id }}">{{ m.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label>{{ t.label_color }}</label>
+              <button type="button" id="color-trigger" class="color-trigger" disabled>
+                <span class="color-trigger-placeholder" id="color-trigger-placeholder">{{ t.ph_choose_color }}</span>
+                <span class="color-trigger-chosen" id="color-trigger-chosen" style="display:none;">
+                  <img id="color-trigger-img" src="" alt="">
+                  <span id="color-trigger-name"></span>
+                </span>
+                <span class="color-trigger-arrow">›</span>
+              </button>
+              <input type="hidden" name="color" id="color-value" required>
+            </div>
+            <div class="field full">
+              <label>{{ t.label_storage }}</label>
+              <select name="storage" id="storage-select" required disabled>
+                <option value="" disabled selected>{{ t.ph_choose_storage }}</option>
+              </select>
+            </div>
+            <div class="field full" id="vip-field" style="display:none;">
+              <label>{{ t.label_custom_request }}</label>
+              <textarea name="custom_request" id="custom-request" rows="3" placeholder="{{ t.ph_custom_request }}"></textarea>
+            </div>
+            <div class="field full">
+              <label>{{ t.label_notes }}</label>
+              <textarea name="notes" rows="3" placeholder="{{ t.ph_notes }}"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">{{ t.btn_confirm }}</button>
+        </form>
+      </div>
+
+      <!-- ===== نافذة اختيار اللون بالصور (بدل القائمة المنسدلة) ===== -->
+      <div class="color-modal-overlay" id="color-modal-overlay">
+        <div class="color-modal">
+          <div class="color-modal-header">
+            <h3>{{ t.gallery_title }}</h3>
+            <button type="button" class="color-modal-close" id="color-modal-close" aria-label="close">×</button>
+          </div>
+          <div class="color-modal-grid" id="color-modal-grid"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== الفوتر ===== -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div style="margin-bottom: 14px;">
+            {{ L.logo("footer", invert=true) }}
+          </div>
+          <p style="max-width: 260px; color:#a9c2e0; font-size:0.9rem; margin-bottom: 16px;">
+            {{ t.footer_tagline }}
+          </p>
+          {{ S.social_icons(social_links, "footer") }}
+        </div>
+        <div>
+          <h4>{{ t.footer_quicklinks }}</h4>
+          <ul>
+            <li><a href="#home">{{ t.nav_home }}</a></li>
+            <li><a href="#products">{{ t.nav_models }}</a></li>
+            <li><a href="{{ url_for('lookup') }}">{{ t.nav_lookup }}</a></li>
+            <li><a href="#reserve">{{ t.nav_reserve }}</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>{{ t.footer_contact }}</h4>
+          <ul>
+            <li>💼 {{ t.footer_sales }}: {{ sales_phone }}</li>
+            <li>🛠️ {{ t.footer_maintenance }}: {{ maintenance_phone }}</li>
+            <li>💬 <a href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noopener">{{ t.footer_whatsapp }}</a></li>
+            <li>✉️ info@musabphone.com</li>
+            <li>📍 {{ "بنغازي الفويهات شارع الببسي شارع جنة الفواكة" if lang == "ar" else "Libya" }}</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        {{ t.footer_rights }}
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // بيانات الموديلات (كل موديل له ألوان وسعات خاصة به) لبناء القوائم المنسدلة ديناميكياً
+    window.MUSAB_MODELS = {{ models_json|tojson }};
+    window.MUSAB_GALLERY = {{ gallery|tojson }};
+    window.MUSAB_T = {{ t|tojson }};
+    window.MUSAB_LANG = {{ lang|tojson }};
+  </script>
+  <script src="{{ url_for('static', filename='js/countdown.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/stock.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/model-select.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chart-growth.js') }}"></script>
+</body>
+</html>
