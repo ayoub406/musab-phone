@@ -4,11 +4,12 @@
 تطبيق ويب باستخدام Flask + SQLite
 """
 
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response, abort
 import psycopg2
 import psycopg2.extras
 import os
 import json
+import mimetypes
 import qrcode
 from datetime import datetime, timedelta
 import re
@@ -37,12 +38,15 @@ PRODUCTS_IMG_DIR = os.path.join(os.path.dirname(__file__), "static", "img", "pro
 os.makedirs(QR_DIR, exist_ok=True)
 os.makedirs(PRODUCTS_IMG_DIR, exist_ok=True)
 
-ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
+ALLOWED_IMAGE_EXT = {
+    "png", "jpg", "jpeg", "jpe", "jfif", "webp", "gif", "bmp",
+    "tif", "tiff", "heic", "heif", "avif", "svg", "ico",
+}
 
 # ---------------------------------------------------------
 # إعداد موعد الحجز: بعد 11 يوماً من الآن الساعة 7:00 مساءً
 # ---------------------------------------------------------
-RESERVATION_DEADLINE = (datetime.now() + timedelta(days=11)).replace(
+RESERVATION_DEADLINE = (datetime.now() + timedelta(days=7)).replace(
     hour=19, minute=0, second=0, microsecond=0
 )
 
@@ -169,6 +173,13 @@ def init_db():
         )
         """
     )
+    # نخزّن بيانات الصورة نفسها داخل قاعدة البيانات (bytea) بدل القرص المحلي للسيرفر،
+    # لأن استضافات مثل Render تمسح ملفات القرص المحلي مع كل عملية نشر جديدة (redeploy)،
+    # بينما قاعدة بيانات Postgres (Neon) تبقى دائمة. هذا يمنع مشكلة صور 404 بعد كل تحديث للموقع.
+    if not _column_exists(conn, "products", "image_data"):
+        conn.execute("ALTER TABLE products ADD COLUMN image_data BYTEA")
+    if not _column_exists(conn, "products", "image_mime"):
+        conn.execute("ALTER TABLE products ADD COLUMN image_mime TEXT")
     conn.commit()
 
     count = conn.execute("SELECT COUNT(*) AS c FROM categories").fetchone()["c"]
@@ -378,7 +389,7 @@ TRANSLATIONS = {
         "f2_title": "حجز آمن 100%", "f2_desc": "بياناتك محمية بالكامل، ولا يتم أي خصم مالي عند الحجز.",
         "f3_title": "دعم فوري", "f3_desc": "فريق مصعب فون جاهز للرد على استفساراتك في أي وقت.",
         "f4_title": "أفضل الأسعار", "f4_desc": "أسعار تنافسية وعروض حصرية للحاجزين الأوائل فقط.",
-        "gallery_title": "اختر لونك المفضل", "gallery_sub": "iPhone 18 متوفر بأربعة ألوان مميزة",
+        "gallery_title": "اختر لونك المفضل", "gallery_sub": " متوفر بأربعة ألوان مميزة  IPHONE 18 PRO MAX - 18PRO",
         "gallery_sold_label": "حجز حتى الآن", "gallery_bestseller": "🏆 الأكثر مبيعاً",
         "brand_tagline": "رقم واحد في السوق الليبي لمنتجات Apple واكسسواراتها",
         "models_title": "اختر موديلك المفضل",
@@ -753,6 +764,23 @@ if not ADMIN_ONLY:
             company_name=COMPANY_NAME,
         )
 
+    @app.route("/product-image/<int:prod_id>")
+    def product_image(prod_id):
+        # نقرأ الصورة من قاعدة البيانات مباشرة (لا من القرص المحلي) حتى تبقى ثابتة
+        # ولا تختفي بعد كل عملية نشر جديدة (redeploy) على الاستضافة.
+        conn = get_db()
+        row = conn.execute(
+            "SELECT image_data, image_mime FROM products WHERE id = ?", (prod_id,)
+        ).fetchone()
+        conn.close()
+        if not row or not row["image_data"]:
+            abort(404)
+        data = bytes(row["image_data"])
+        mime = row["image_mime"] or "image/jpeg"
+        resp = Response(data, mimetype=mime)
+        resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return resp
+
     @app.route("/api/stock")
     def api_stock():
         return jsonify(get_stock_status())
@@ -923,23 +951,29 @@ if not PUBLIC_ONLY:
         category_id = request.form.get("category_id") or None
         category_id = int(category_id) if category_id else None
         image_filename = None
+        image_bytes = None
+        image_mime = None
 
         file = request.files.get("image")
         if file and file.filename:
             ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
             if ext in ALLOWED_IMAGE_EXT:
-                safe_name = secure_filename(file.filename)
-                image_filename = f"{int(datetime.now().timestamp())}_{safe_name}"
-                file.save(os.path.join(PRODUCTS_IMG_DIR, image_filename))
+                raw = file.read()
+                if len(raw) > 8 * 1024 * 1024:
+                    flash("حجم الصورة كبير جداً (الحد الأقصى 8 ميجابايت).", "error")
+                else:
+                    image_filename = secure_filename(file.filename)
+                    image_bytes = psycopg2.Binary(raw)
+                    image_mime = file.mimetype or mimetypes.guess_type(image_filename)[0] or "image/jpeg"
             else:
                 flash("صيغة الصورة غير مدعومة.", "error")
 
         if name:
             conn = get_db()
             conn.execute(
-                """INSERT INTO products (category_id, name, description, price, image, active, created_at)
-                   VALUES (?, ?, ?, ?, ?, 1, ?)""",
-                (category_id, name, description, float(price or 0), image_filename, datetime.now().isoformat()),
+                """INSERT INTO products (category_id, name, description, price, image, image_data, image_mime, active, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)""",
+                (category_id, name, description, float(price or 0), image_filename, image_bytes, image_mime, datetime.now().isoformat()),
             )
             conn.commit()
             conn.close()

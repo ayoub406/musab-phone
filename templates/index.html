@@ -87,7 +87,14 @@
           <img src="{{ url_for('static', filename='img/promo-banner.jpg') }}" alt="iPhone 18 Pro Max" class="promo-phone-img" loading="lazy">
           <span class="promo-phone-shine"></span>
         </span>
-        <h3>{{ "كن أول الحاصلين على آيفون 18 برو ماكس" if lang == "ar" else "Be the first to get the iPhone 18 Pro Max" }}</h3>
+    <h3>
+  {% if lang == "ar" %}
+    {{ "كن أول الحاصلين على آيفون<br>18 برو - برو ماكس" | safe }}
+  {% else %}
+    {{ "Be the first to get the iPhone<br>18 Pro - Pro Max" | safe }}
+  {% endif %}
+</h3>
+
         <p>{{ "احجز الآن وكن من أوائل المستلمين فور توفر الجهاز" if lang == "ar" else "Reserve now and be among the first to receive it" }}</p>
         <span class="promo-banner-cta">{{ t.hero_cta1 }} ←</span>
       </a>
@@ -199,8 +206,9 @@
         {% for p in products %}
         <div class="gallery-card">
           <div class="gallery-img-wrap">
-            {% if p.image %}
-            <img src="{{ url_for('static', filename='img/products/' ~ p.image) }}" alt="{{ p.name }}" loading="lazy">
+            {% if p.image_mime %}
+            <img src="{{ url_for('product_image', prod_id=p.id) }}" alt="{{ p.name }}" loading="lazy"
+                 onerror="this.closest('.gallery-img-wrap').classList.add('img-missing');">
             {% else %}
             <div class="gallery-img-wrap img-missing"></div>
             {% endif %}

@@ -339,8 +339,8 @@
           {% for p in products %}
           <div class="prod-row">
             <div class="prod-main">
-              {% if p.image %}
-              <img src="{{ url_for('static', filename='img/products/' ~ p.image) }}" alt="">
+              {% if p.image_mime %}
+              <img src="{{ url_for('product_image', prod_id=p.id) }}" alt="" onerror="this.style.display='none';">
               {% endif %}
               <div>
                 <strong>{{ p.name }}</strong>

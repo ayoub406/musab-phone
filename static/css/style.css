@@ -715,16 +715,16 @@ img { max-width: 100%; display: block; }
 }
 
 .gallery-img-wrap {
-  /* نسبة تقارب شكل جهاز الآيفون الفعلي بدل المربع، حتى لا تظهر الصورة مقصوصة أو مشوّهة */
+  /* نسبة أقرب لشكل صور المنتج الفعلية (3:4) حتى تمتلئ البطاقة بالصورة بدون فراغات غير متساوية بين البطاقات */
   position: relative;
-  aspect-ratio: 9 / 16;
-  max-height: 480px;
+  aspect-ratio: 3 / 4;
+  width: 100%;
   background: var(--brand-blue-light);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 18px;
+  padding: 8px;
 }
 
 /* توهّج يحاكي "منصة" بلون الجهاز نفسه تحت الصورة، يظهر عند مرور الفأرة */
