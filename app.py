@@ -12,7 +12,7 @@ import io
 import json
 import mimetypes
 import qrcode
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import re
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
@@ -61,11 +61,12 @@ ALLOWED_IMAGE_EXT = {
 }
 
 # ---------------------------------------------------------
-# إعداد موعد الحجز: بعد 11 يوماً من الآن الساعة 7:00 مساءً
+# إعداد موعد الحجز: تاريخ وساعة ثابتة بتوقيت ليبيا (UTC+2، بدون توقيت صيفي)
+# محددة صراحة بالمنطقة الزمنية حتى يبقى الموعد الرسمي صحيحاً دائماً بغض
+# النظر عن توقيت السيرفر المستضاف عليه الموقع (Render وغيره عادة UTC).
 # ---------------------------------------------------------
-RESERVATION_DEADLINE = (datetime.now() + timedelta(days=7)).replace(
-    hour=19, minute=0, second=0, microsecond=0
-)
+LIBYA_TZ = timezone(timedelta(hours=2))
+RESERVATION_DEADLINE = datetime(2026, 9, 9, 19, 0, 0, tzinfo=LIBYA_TZ)
 
 # ---------------------------------------------------------
 # ===== إعدادات دخول لوحة التحكم (عدّل هذي القيم قبل النشر) =====
@@ -660,7 +661,7 @@ if not ADMIN_ONLY:
             errors.append("الرجاء اختيار سعة تخزين متاحة لهذا الموديل." if is_ar else "Please choose a storage option available for this model.")
         if m and m.get("is_vip") and len(custom_request) < 5:
             errors.append("الرجاء وصف تصميمك الخاص (VIP)." if is_ar else "Please describe your custom VIP design.")
-        if datetime.now() > RESERVATION_DEADLINE:
+        if datetime.now(LIBYA_TZ) > RESERVATION_DEADLINE:
             errors.append("عذراً، انتهى وقت استقبال الحجوزات." if is_ar else "Sorry, the booking window has closed.")
 
         if errors:
@@ -882,6 +883,31 @@ if not PUBLIC_ONLY:
         conn.execute("DELETE FROM reservations WHERE id = ?", (res_id,))
         conn.commit()
         conn.close()
+        return redirect(url_for("admin"))
+
+    @app.route("/admin/reset-all", methods=["POST"])
+    def admin_reset_all():
+        # تصفير كامل لكل الحجوزات (يُستخدم مرة واحدة قبل تسليم الموقع فعلياً
+        # للعميل، بعد الانتهاء من التجربة، حتى تبدأ الكمية من 100 والحجوزات
+        # من صفر أمام الزوار الحقيقيين). محمي بتأكيد كتابة العبارة بالضبط.
+        if not admin_required():
+            return redirect(url_for("admin"))
+        confirm_text = request.form.get("confirm", "").strip()
+        if confirm_text != "تصفير":
+            flash("لم يتم التصفير: يجب كتابة كلمة \"تصفير\" بالضبط للتأكيد.", "error")
+            return redirect(url_for("admin"))
+        conn = get_db()
+        conn.execute("DELETE FROM reservations")
+        conn.commit()
+        conn.close()
+        # حذف صور QR التجريبية المولّدة سابقاً من على القرص (إن وُجدت)
+        try:
+            for fname in os.listdir(QR_DIR):
+                if fname.lower().endswith(".png"):
+                    os.remove(os.path.join(QR_DIR, fname))
+        except Exception:
+            pass
+        flash("تم تصفير كل الحجوزات بنجاح. الموقع جاهز الآن لاستقبال حجوزات حقيقية.", "success")
         return redirect(url_for("admin"))
 
     @app.route("/admin/status/<int:res_id>", methods=["POST"])

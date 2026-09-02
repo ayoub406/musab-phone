@@ -129,6 +129,19 @@
       </div>
     </div>
 
+    <!-- ===== تصفير كامل قبل تسليم الموقع (تجربة فقط - استخدم مرة واحدة) ===== -->
+    <details style="margin:0 0 16px; border:1px dashed #c0392b; border-radius:10px; padding:10px 14px; background:#fdf3f2;">
+      <summary style="cursor:pointer; color:#c0392b; font-weight:800;">⚠️ تصفير كل الحجوزات (قبل التسليم للعميل)</summary>
+      <p style="font-size:0.85rem; color:var(--gray-500); margin:8px 0;">
+        يحذف كل الحجوزات التجريبية نهائياً ويرجّع المتبقي إلى {{ stock.total }}. لا يمكن التراجع عن هذا الإجراء.
+        استخدمه مرة واحدة فقط بعد الانتهاء من التجربة وقبل نشر الموقع للزوار الحقيقيين.
+      </p>
+      <form action="{{ url_for('admin_reset_all') }}" method="POST" onsubmit="return confirm('متأكد؟ هذا سيحذف كل الحجوزات نهائياً ولا يمكن التراجع.');" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input type="text" name="confirm" placeholder="اكتب: تصفير" required style="max-width:160px;">
+        <button type="submit" class="del-btn">تصفير كل الحجوزات الآن</button>
+      </form>
+    </details>
+
     <!-- ===== فلاتر حالة الطلب ===== -->
     <div class="status-filters" id="statusFilters">
       <span class="status-chip active" data-filter="all" style="background: var(--brand-navy);">
