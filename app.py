@@ -426,7 +426,7 @@ TRANSLATIONS = {
         "ph_choose_storage": "اختر السعة", "ph_notes": "أي تفاصيل إضافية ترغب بإخبارنا بها",
         "ph_custom_request": "مثال: أريد طلاء ذهبي 24 قيراط بالكامل مع شعار مخصص...",
         "btn_confirm": "تأكيد الحجز",
-        "footer_tagline": "وجهتك الأولى لحجز أحدث أجهزة آيفون بثقة وسهولة.",
+        "footer_tagline": "رقم 1 ف سوق الليبيي لمنتجات ابل🥇",
         "footer_quicklinks": "روابط سريعة", "footer_contact": "تواصل معنا",
         "footer_maintenance": "قسم الصيانة", "footer_whatsapp": "تواصل واتساب",
         "footer_sales": "قسم المبيعات",
