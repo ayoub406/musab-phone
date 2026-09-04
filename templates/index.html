@@ -17,7 +17,7 @@
     })();
   </script>
 </head>
-<body>
+<body data-currency="{{ currency }}">
 {% import "_logo.html" as L %}
 {% import "_social.html" as S %}
 
@@ -197,37 +197,65 @@
     <div class="container">
       <div class="section-title">
         <h2>{{ "تصفح منتجات آبل الجديدة 2026" if lang == "ar" else "Browse Apple's New Products 2026" }}</h2>
-        {% if not products %}
+        {% if not product_groups %}
         <p>{{ "سيتم إضافة المنتجات قريباً من قبل فريقنا" if lang == "ar" else "Products will be added soon by our team" }}</p>
         {% endif %}
       </div>
-      {% if products %}
-      <div class="gallery-grid product-grid">
-        {% for p in products %}
-        <div class="gallery-card product-card">
-          <div class="product-img-wrap">
-            {% if p.image_mime %}
-            <img src="{{ url_for('product_image', prod_id=p.id) }}" alt="{{ p.name }}" loading="lazy"
-                 onerror="this.closest('.product-img-wrap').classList.add('img-missing');">
-            {% else %}
-            <div class="product-img-wrap img-missing"></div>
-            {% endif %}
+      {% if product_groups %}
+      {% for group in product_groups %}
+      <div class="product-category-group">
+        <h3 class="product-category-title">
+          <span>{{ group.title }}</span>
+          <span class="product-category-count">{{ group.products|length }}</span>
+        </h3>
+        <div class="gallery-grid product-grid">
+          {% for p in group.products %}
+          <div class="gallery-card product-card js-product-card"
+               data-name="{{ p.name }}"
+               data-desc="{{ p.description or '' }}"
+               data-cat="{{ (p.cat_ar if lang == 'ar' else (p.cat_en or p.cat_ar)) or '' }}"
+               data-price="{{ ('{:,.0f}'.format(p.price) + ' ' + currency) if p.price else '' }}"
+               data-img="{{ url_for('product_image', prod_id=p.id) if p.image_mime else '' }}">
+            <button type="button" class="product-img-wrap js-product-open{{ '' if p.image_mime else ' img-missing' }}" aria-label="{{ 'عرض تفاصيل المنتج' if lang == 'ar' else 'View product details' }}">
+              {% if p.image_mime %}
+              <img src="{{ url_for('product_image', prod_id=p.id) }}" alt="{{ p.name }}" loading="lazy"
+                   onerror="this.closest('.product-img-wrap').classList.add('img-missing');">
+              {% endif %}
+              <span class="product-zoom-hint">🔍</span>
+            </button>
+            <div class="product-info">
+              <div class="product-name">{{ p.name }}{% if p.cat_ar %}<span class="product-cat">{{ p.cat_ar if lang == 'ar' else (p.cat_en or p.cat_ar) }}</span>{% endif %}</div>
+              {% if p.description %}
+              <p class="product-desc">{{ p.description }}</p>
+              {% endif %}
+              {% if p.price %}
+              <div class="product-price">{{ "{:,.0f}".format(p.price) }} {{ currency }}</div>
+              {% endif %}
+            </div>
           </div>
-          <div class="product-info">
-            <div class="product-name">{{ p.name }}{% if p.cat_ar %}<span class="product-cat">{{ p.cat_ar }}</span>{% endif %}</div>
-            {% if p.description %}
-            <p class="product-desc">{{ p.description }}</p>
-            {% endif %}
-            {% if show_prices and p.price %}
-            <div class="product-price">{{ "{:,.0f}".format(p.price) }} {{ currency }}</div>
-            {% endif %}
-          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
       </div>
+      {% endfor %}
       {% endif %}
     </div>
   </section>
+
+  <!-- ===== نافذة تفاصيل المنتج (تفتح عند الضغط على صورة المنتج) ===== -->
+  <div class="product-modal-overlay" id="product-modal-overlay">
+    <div class="product-modal" role="dialog" aria-modal="true">
+      <button type="button" class="product-modal-close" id="product-modal-close" aria-label="close">×</button>
+      <div class="product-modal-img-wrap" id="product-modal-img-wrap">
+        <img id="product-modal-img" src="" alt="">
+      </div>
+      <div class="product-modal-body">
+        <div class="product-modal-cat" id="product-modal-cat"></div>
+        <h3 id="product-modal-name"></h3>
+        <p id="product-modal-desc"></p>
+        <div class="product-modal-price" id="product-modal-price"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- ===== نموذج الحجز ===== -->
   <section class="reserve-section" id="reserve">
@@ -373,5 +401,6 @@
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <script src="{{ url_for('static', filename='js/model-select.js') }}"></script>
   <script src="{{ url_for('static', filename='js/chart-growth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/product-modal.js') }}"></script>
 </body>
 </html>

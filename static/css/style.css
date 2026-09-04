@@ -794,6 +794,38 @@ img { max-width: 100%; display: block; }
   justify-content: center;
   overflow: hidden;
   padding: 10px;
+  /* الصورة أصبحت زر (button) قابل للضغط لفتح نافذة تفاصيل المنتج، هذا
+     يعيد ضبط تنسيق الزر الافتراضي حتى يبدو تماماً كصندوق صورة عادي */
+  border: none;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+.product-zoom-hint {
+  position: absolute;
+  bottom: 8px;
+  inset-inline-end: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(10, 37, 64, 0.65);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: 0.2s;
+  pointer-events: none;
+}
+.product-card:hover .product-zoom-hint,
+.product-img-wrap:focus-visible .product-zoom-hint {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .product-img-wrap img {
@@ -863,6 +895,147 @@ img { max-width: 100%; display: block; }
 
 .product-grid { align-items: stretch; }
 .product-card { display: flex; flex-direction: column; text-align: start; }
+
+/* ===== أقسام المنتجات (كل قسم يضيفه الأدمن يظهر بعنوانه الخاص) ===== */
+.product-category-group { margin-bottom: 42px; }
+.product-category-group:last-child { margin-bottom: 0; }
+
+.product-category-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--brand-navy);
+  margin-bottom: 18px;
+  padding-inline-start: 14px;
+  border-inline-start: 5px solid var(--brand-blue);
+}
+
+.product-category-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--brand-blue);
+  background: var(--brand-blue-light);
+  border-radius: 999px;
+  padding: 3px 11px;
+}
+
+/* ===== نافذة تفاصيل المنتج (تفتح عند الضغط على صورته) ===== */
+.product-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 37, 64, 0.65);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease;
+  padding: 20px;
+}
+.product-modal-overlay.open { opacity: 1; visibility: visible; }
+
+.product-modal {
+  position: relative;
+  background: var(--white);
+  border-radius: 22px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+  transform: translateY(16px);
+  transition: transform 0.25s ease;
+}
+.product-modal-overlay.open .product-modal { transform: translateY(0); }
+
+.product-modal-close {
+  position: absolute;
+  top: 14px;
+  inset-inline-end: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.9);
+  color: var(--gray-700);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.product-modal-close:hover { background: var(--brand-blue); color: #fff; }
+
+.product-modal-img-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 46vh;
+  background: var(--brand-blue-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 22px 22px 0 0;
+  position: relative;
+}
+.product-modal-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 22px;
+}
+.product-modal-img-wrap.img-missing img { display: none; }
+.product-modal-img-wrap.img-missing::after {
+  content: "📦";
+  font-size: 3.5rem;
+}
+
+.product-modal-body { padding: 22px 26px 28px; text-align: start; }
+
+.product-modal-cat {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--brand-blue);
+  background: var(--brand-blue-light);
+  padding: 3px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.product-modal-body h3 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--brand-navy);
+  margin-bottom: 10px;
+}
+
+.product-modal-body p {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--gray-500);
+  white-space: pre-line;
+}
+
+.product-modal-price {
+  margin-top: 16px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--brand-blue);
+}
+
+@media (max-width: 480px) {
+  .product-modal-img-wrap { max-height: 38vh; }
+  .product-modal-body { padding: 18px 18px 22px; }
+}
 
 /* ===== المميزات ===== */
 .features {

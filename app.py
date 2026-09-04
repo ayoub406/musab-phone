@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 import re
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
+from collections import OrderedDict
 
 # دعم صور آيفون بصيغة HEIC/HEIF (الصيغة الافتراضية لكاميرا آيفون) حتى تُفتح
 # وتُحوَّل تلقائياً مثل أي صورة أخرى. إن لم تكن المكتبة مثبتة، يستمر الموقع
@@ -37,14 +38,19 @@ app.secret_key = os.environ.get("SECRET_KEY", "musab-phone-super-secret-key-2026
 
 # ---------------------------------------------------------
 # رابط الاتصال بقاعدة بيانات PostgreSQL (مثل Neon أو Supabase)
-# يجب ضبط متغيّر البيئة DATABASE_URL قبل تشغيل الموقع، مثال:
+# مهم جداً: يجب ضبط متغيّر البيئة DATABASE_URL قبل تشغيل الموقع، ولا تضع
+# رابط الاتصال الحقيقي (بالباسورد) هنا مباشرة بالكود أبداً - أي شخص يشوف
+# الكود (مثلاً لو رُفع على GitHub أو انبعث كملف) يقدر يتصل بقاعدة بياناتك
+# مباشرة ويشوف/يعدّل/يحذف كل بيانات العملاء بدون المرور بالموقع إطلاقاً.
+# مثال على شكل الرابط الصحيح:
 #   postgresql://user:password@host/dbname?sslmode=require
 # ---------------------------------------------------------
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:npg_x3a9ohjbCuKz@ep-odd-wind-aea2pu6n-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError(
         "لم يتم ضبط متغيّر البيئة DATABASE_URL. أضف رابط قاعدة بيانات PostgreSQL "
-        "(من Neon أو Supabase مثلاً) قبل تشغيل الموقع."
+        "(من Neon أو Supabase مثلاً) كمتغيّر بيئة قبل تشغيل الموقع - ولا تكتبه "
+        "أبداً مباشرة داخل الكود."
     )
 # بعض المزوّدين (مثل Heroku القديم) يعطون رابطاً يبدأ بـ postgres:// بدل postgresql://
 if DATABASE_URL.startswith("postgres://"):
@@ -591,14 +597,30 @@ if not ADMIN_ONLY:
         products = conn.execute(
             "SELECT p.*, c.name_ar AS cat_ar, c.name_en AS cat_en FROM products p "
             "LEFT JOIN categories c ON c.id = p.category_id WHERE p.active = 1 "
-            "ORDER BY p.created_at DESC"
+            "ORDER BY c.name_ar NULLS LAST, p.created_at DESC"
         ).fetchall()
         conn.close()
+
+        lang = get_lang()
+
+        # تجميع منتجات الأدمن حسب القسم (بدل عرضها كلها مختلطة في شبكة
+        # واحدة): كل قسم يظهر بعنوانه الخاص وشبكة منتجاته تحته، ومنتجات
+        # بدون قسم محدد تُجمع في قسم "منتجات أخرى" بآخر الصفحة.
+        product_groups = OrderedDict()
+        for p in products:
+            key = p["category_id"] if p["category_id"] else 0
+            if key not in product_groups:
+                if p["category_id"]:
+                    title = p["cat_ar"] if lang == "ar" else (p["cat_en"] or p["cat_ar"])
+                else:
+                    title = "منتجات أخرى" if lang == "ar" else "Other Products"
+                product_groups[key] = {"title": title, "products": []}
+            product_groups[key]["products"].append(p)
+        product_groups = list(product_groups.values())
 
         # نسخة من الموديلات مُجهَّزة لجافاسكريبت: كل لون يصبح كائن
         # {id, name, file} بدل مجرّد نص، بحيث تُطابق الصورة الصحيحة دائماً
         # وتُترجم تلقائياً حسب لغة الموقع الحالية (عربي/إنجليزي).
-        lang = get_lang()
         models_for_js = []
         for m in MODELS:
             mm = dict(m)
@@ -628,6 +650,7 @@ if not ADMIN_ONLY:
             currency=CURRENCY,
             show_prices=SHOW_PRICES,
             products=products,
+            product_groups=product_groups,
         )
 
     @app.route("/reserve", methods=["POST"])
@@ -1086,6 +1109,18 @@ if not PUBLIC_ONLY:
         return redirect(url_for("admin_catalog"))
 
 
+# تهيئة قاعدة البيانات (إنشاء الجداول أول مرة + أي تحديثات عليها) تصير هنا
+# على مستوى الملف مباشرة، وليس فقط داخل "if __name__ == '__main__'" - لأن
+# سيرفرات الإنتاج مثل gunicorn تستورد هذا الملف كوحدة (import) ولا تشغّله
+# كبرنامج رئيسي أبداً، فلو بقيت التهيئة حصراً داخل ذاك الشرط، ما كانت
+# لتُنفَّذ إطلاقاً على الاستضافة وتبقى قاعدة البيانات فارغة/غير مهيأة.
+init_db()
+
+
 if __name__ == "__main__":
-    init_db()
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    # وضع debug=True يكشف تفاصيل تقنية حساسة عن الكود لأي زائر عند حدوث
+    # خطأ، وأحياناً يسمح بتشغيل أوامر على السيرفر - لازم يكون مطفياً دائماً
+    # بالإنتاج. نتحكم فيه بمتغيّر بيئة اختياري FLASK_DEBUG بدل ما يكون
+    # مفعّل دائماً بالكود (القيمة الافتراضية هنا False/مطفي).
+    debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug_mode, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -3,3 +3,4 @@ qrcode[pil]==7.4.2
 psycopg2-binary
 Pillow>=11.1.0
 pillow-heif>=0.18.0
+gunicorn==22.0.0
